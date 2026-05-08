@@ -5,8 +5,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
-import top.e404.skiko.draw.compose.*
-import top.e404.skiko.util.bytes
+import top.e404.tavolo.draw.compose.*
+import top.e404.tavolo.util.bytes
 import top.e404.status.render.IConfig
 import top.e404.status.render.feature.Heatmap2dRender
 import kotlin.math.max
@@ -47,11 +47,10 @@ class WakatimeRender(val config: IConfig) {
         ) {
             text(
                 title,
-                Modifier
-                    .fontSize(layout.titleSize)
-                    .fontFamily(layout.titleTypeface)
-                    .textColor(theme.titleColor)
-                    .margin(bottom = 20f)
+                modifier = Modifier.padding(bottom = 20f),
+                fontSize = layout.titleSize,
+                textColor = theme.titleColor,
+                fontFamily = layout.titleFontFamily
             )
             statsList(statsList, theme)
         }
@@ -67,10 +66,10 @@ class WakatimeRender(val config: IConfig) {
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
                         text(
-                            lang.name, Modifier
-                                .fontSize(layout.textSize)
-                                .fontFamily(layout.langTypeface)
-                                .textColor(theme.textColor)
+                            lang.name,
+                            fontSize = layout.textSize,
+                            textColor = theme.textColor,
+                            fontFamily = layout.langFontFamily
                         )
                     }
                     cell(
@@ -99,10 +98,10 @@ class WakatimeRender(val config: IConfig) {
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
                         text(
-                            lang.duration, Modifier
-                                .fontSize(layout.textSize)
-                                .fontFamily(layout.textTypeface)
-                                .textColor(theme.textColor)
+                            lang.duration,
+                            fontSize = layout.textSize,
+                            textColor = theme.textColor,
+                            fontFamily = layout.textFontFamily
                         )
                     }
                 }

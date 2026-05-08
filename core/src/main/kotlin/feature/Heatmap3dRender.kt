@@ -5,9 +5,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.Image
-import top.e404.skiko.draw.render3d.*
-import top.e404.skiko.util.Ahsb
-import top.e404.skiko.util.ahsb
+import top.e404.tavolo.draw.render3d.*
+import top.e404.tavolo.util.Ahsb
+import top.e404.tavolo.util.ahsb
 import top.e404.status.render.ColorSerializer
 import java.time.LocalDate
 import kotlin.math.ceil
@@ -179,21 +179,19 @@ object Heatmap3dRender {
         val chartDepth = 6 * (barSize + barSpacing) + barSpacing
         val chartCenter = Vec3(chartWidth / 2, 2.5f, chartDepth / 2)
         // 设置相机
-        val camera = OrbitCamera(target = chartCenter, azimuthDegrees = 45f, elevationDegrees = 35f, distance = 40f)
-        val (viewMatrix, eyePosition) = createViewMatrix(camera)
-        val cameraForward = (camera.target - eyePosition).normalized()
+        val camera = OrbitCamera(target = chartCenter, yaw = 45f, pitch = 35f, distance = 40f)
         // 渲染
-        return renderToImage(
-            chartMesh,
-            layout.imageWidth,
-            layout.imageHeight,
-            viewMatrix,
-            cameraForward,
-            camera.distance,
-            true,
-            false,
-            theme.background,
-            false
+        return renderSceneToImage(
+            scene = Scene(listOf(chartMesh)),
+            config = RenderConfig(
+                width = layout.imageWidth,
+                height = layout.imageHeight,
+                camera = camera,
+                renderFaces = true,
+                usePerspective = false,
+                backgroundColor = theme.background,
+                useBackFaceCulling = false
+            )
         )
     }
 

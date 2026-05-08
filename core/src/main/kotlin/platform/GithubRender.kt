@@ -5,14 +5,14 @@ import org.jetbrains.skia.Font
 import org.jetbrains.skia.Paint
 import org.jetbrains.skia.PaintMode
 import org.jetbrains.skia.PathEffect
-import top.e404.skiko.draw.compose.*
-import top.e404.skiko.draw.compose.charts.BarTheme
-import top.e404.skiko.draw.compose.charts.RadarFixPolicy
-import top.e404.skiko.draw.compose.charts.RadarTheme
-import top.e404.skiko.draw.compose.charts.bar
-import top.e404.skiko.draw.compose.charts.radar
-import top.e404.skiko.util.Colors
-import top.e404.skiko.util.bytes
+import top.e404.tavolo.draw.compose.*
+import top.e404.tavolo.draw.compose.charts.BarTheme
+import top.e404.tavolo.draw.compose.charts.RadarFixPolicy
+import top.e404.tavolo.draw.compose.charts.RadarTheme
+import top.e404.tavolo.draw.compose.charts.bar
+import top.e404.tavolo.draw.compose.charts.radar
+import top.e404.tavolo.util.Colors
+import top.e404.tavolo.util.bytes
 import top.e404.status.render.IConfig
 import top.e404.status.render.feature.Heatmap2dRender
 import top.e404.status.render.feature.Heatmap3dRender
@@ -147,11 +147,12 @@ class GithubRender(val config: IConfig) {
                     image(heatmap)
                 }
                 box(boxModifier, HorizontalAlignment.Right, VerticalAlignment.Top) {
-                    row(Modifier.margin(20f)) {
-                        text("$username / $start / $end", Modifier
-                            .textColor(Colors.GRAY.argb)
-                            .fontSize(20f)
-                            .fontFamily(config.github3d.font.normalTypeface)
+                    row(Modifier.padding(20f)) {
+                        text(
+                            "$username / $start / $end",
+                            fontSize = 20f,
+                            textColor = Colors.GRAY.argb,
+                            fontFamily = config.github3d.font.normalFontFamily
                         )
                     }
                 }
@@ -161,19 +162,20 @@ class GithubRender(val config: IConfig) {
                     HorizontalAlignment.Left,
                     VerticalAlignment.Bottom
                 ) {
-                    row(Modifier.margin(bottom = 150f, left = 60f), VerticalAlignment.Center) {
+                    row(Modifier.padding(bottom = 150f, left = 60f), VerticalAlignment.Center) {
                         bar(
                             BarTheme(120f, 60f, strokeColor = theme.background, strokeWidth = 3f),
                             languages.map { it.skikoColor to it.contributions.toFloat() }
                         )
-                        column(Modifier.margin(left = 20f)) {
+                        column(Modifier.padding(left = 20f)) {
                             for (lang in languages) {
-                                row(Modifier.margin(5f), VerticalAlignment.Center) {
-                                    box(Modifier.size(25f).margin(right = 10f).background(lang.skikoColor))
-                                    text(lang.language, Modifier
-                                            .fontSize(25f)
-                                            .textColor(Color.WHITE)
-                                            .fontFamily(config.github3d.font.normalTypeface)
+                                row(Modifier.padding(5f), VerticalAlignment.Center) {
+                                    box(Modifier.padding(right = 10f).size(25f).background(lang.skikoColor))
+                                    text(
+                                        lang.language,
+                                        fontSize = 25f,
+                                        textColor = Color.WHITE,
+                                        fontFamily = config.github3d.font.normalFontFamily
                                     )
                                 }
                             }
@@ -196,7 +198,7 @@ class GithubRender(val config: IConfig) {
                         val scaled = if (v == 0) -.1f else log10(v.toDouble()).toFloat()
                         name to scaled / 4f
                     }
-                    row(Modifier.margin(40f), VerticalAlignment.Center) {
+                    row(Modifier.padding(40f), VerticalAlignment.Center) {
                         val radarTheme = RadarTheme(
                             width = 600f,
                             height = 600f,
@@ -235,38 +237,38 @@ class GithubRender(val config: IConfig) {
                     HorizontalAlignment.Center,
                     VerticalAlignment.Bottom
                 ) {
-                    row(Modifier.margin(50f), VerticalAlignment.Bottom) {
+                    row(Modifier.padding(50f), VerticalAlignment.Bottom) {
                         text(
                             user.contributionsCollection.contributionCalendar.totalContributions.toString(),
-                            Modifier.fontSize(40f)
-                                .textColor(Color.WHITE)
-                                .fontFamily(config.github3d.font.boldTypeface),
+                            fontSize = 40f,
+                            textColor = Color.WHITE,
+                            fontFamily = config.github3d.font.boldFontFamily
                         )
                         text(
                             "contributions",
-                            Modifier.fontSize(30f)
-                                .textColor(Color.WHITE)
-                                .margin(left = 20f, right = 50f)
-                                .fontFamily(config.github3d.font.normalTypeface),
+                            modifier = Modifier.padding(left = 20f, right = 50f),
+                            fontSize = 30f,
+                            textColor = Color.WHITE,
+                            fontFamily = config.github3d.font.normalFontFamily
                         )
-                        row(Modifier.margin(horizontal = 50f), VerticalAlignment.Center) {
+                        row(Modifier.padding(horizontal = 50f), VerticalAlignment.Center) {
                             icon(IconTheme(40f, color = Color.WHITE), config.github3d.icon.star)
                             text(
                                 user.repositories!!.nodes.sumOf { it.stargazerCount }.toString(),
-                                Modifier.fontSize(40f)
-                                    .textColor(Color.WHITE)
-                                    .margin(left = 20f, right = 50f)
-                                    .fontFamily(config.github3d.font.normalTypeface),
+                                modifier = Modifier.padding(left = 20f, right = 50f),
+                                fontSize = 40f,
+                                textColor = Color.WHITE,
+                                fontFamily = config.github3d.font.normalFontFamily
                             )
                         }
-                        row(Modifier.margin(horizontal = 50f), VerticalAlignment.Center) {
+                        row(Modifier.padding(horizontal = 50f), VerticalAlignment.Center) {
                             icon(IconTheme(40f, color = Color.WHITE), config.github3d.icon.fork)
                             text(
                                 user.repositories!!.nodes.sumOf { it.forkCount }.toString(),
-                                Modifier.fontSize(40f)
-                                    .textColor(Color.WHITE)
-                                    .margin(left = 20f, right = 30f)
-                                    .fontFamily(config.github3d.font.normalTypeface),
+                                modifier = Modifier.padding(left = 20f, right = 30f),
+                                fontSize = 40f,
+                                textColor = Color.WHITE,
+                                fontFamily = config.github3d.font.normalFontFamily
                             )
                         }
 

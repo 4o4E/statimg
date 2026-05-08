@@ -5,6 +5,7 @@ import io.ktor.client.engine.okhttp.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.skia.FontMgr
+import top.e404.tavolo.draw.compose.ComposeFontManager
 import top.e404.status.render.feature.Heatmap3dRender
 import top.e404.status.render.feature.Heatmap2dRender
 import java.net.InetSocketAddress
@@ -35,6 +36,8 @@ data class Github3d(
     ) {
         val normalTypeface by lazy { FontMgr.default.makeFromFile(normal)!! }
         val boldTypeface by lazy { FontMgr.default.makeFromFile(bold)!! }
+        val normalFontFamily by lazy { ComposeFontManager.register("github3d-normal", normalTypeface) }
+        val boldFontFamily by lazy { ComposeFontManager.register("github3d-bold", boldTypeface) }
     }
 
     @Serializable

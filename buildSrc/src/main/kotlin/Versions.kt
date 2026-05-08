@@ -6,7 +6,7 @@ object Versions {
     const val KTOR = "2.3.13"
     const val LOG4J = "2.25.2"
     const val KAML = "0.80.1"
-    const val SKIKO_UTIL = "1.9.3-SNAPSHOT"
+    const val TAVOLO = "2.0.0-SNAPSHOT"
 }
 
 fun kotlinx(id: String, version: String = Versions.KOTLIN) = "org.jetbrains.kotlinx:kotlinx-$id:$version"

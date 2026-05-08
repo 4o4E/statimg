@@ -24,8 +24,8 @@ dependencies {
 
     implementation(ktor("server-call-logging"))
     implementation(ktor("server-compression"))
-    implementation(ktor("server-content-negotiation"))
-    implementation(ktor("serialization-kotlinx-json"))
+    implementation(ktor("server-content-negotiation-jvm"))
+    implementation(ktor("serialization-kotlinx-json-jvm"))
 
     // serialization
     implementation(kotlinx("serialization-core-jvm", "1.5.0"))

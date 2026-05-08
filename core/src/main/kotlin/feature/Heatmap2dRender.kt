@@ -3,11 +3,10 @@ package top.e404.status.render.feature
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.skia.Color
-import org.jetbrains.skia.Data
 import org.jetbrains.skia.FontMgr
 import org.jetbrains.skia.Image
-import top.e404.skiko.draw.compose.*
-import top.e404.skiko.util.argb
+import top.e404.tavolo.draw.compose.*
+import top.e404.tavolo.util.argb
 import top.e404.status.render.ColorSerializer
 import java.io.File
 import java.time.LocalDate
@@ -29,15 +28,12 @@ object Heatmap2dRender {
         @SerialName("bar_height") val barHeight: Float = 10F,
         @SerialName("bar_width") val barWidth: Float = 280F
     ) {
-        val titleTypeface by lazy {
-            FontMgr.default.makeFromData(Data.makeFromBytes(File(titleFontFile).readBytes()))!!
-        }
-        val langTypeface by lazy {
-            FontMgr.default.makeFromData(Data.makeFromBytes(File(langFontFile).readBytes()))!!
-        }
-        val textTypeface by lazy {
-            FontMgr.default.makeFromData(Data.makeFromBytes(File(textFontFile).readBytes()))!!
-        }
+        val titleFontFamily by lazy { ComposeFontManager.registerFile("heatmap2d-title", File(titleFontFile)) }
+        val langFontFamily by lazy { ComposeFontManager.registerFile("heatmap2d-lang", File(langFontFile)) }
+        val textFontFamily by lazy { ComposeFontManager.registerFile("heatmap2d-text", File(textFontFile)) }
+        val titleTypeface by lazy { FontMgr.default.makeFromFile(titleFontFile)!! }
+        val langTypeface by lazy { FontMgr.default.makeFromFile(langFontFile)!! }
+        val textTypeface by lazy { FontMgr.default.makeFromFile(textFontFile)!! }
     }
 
     @Serializable
@@ -93,11 +89,11 @@ object Heatmap2dRender {
             for ((_, count) in week) {
                 val color = count?.let { getColor(it) } ?: Color.TRANSPARENT
                 box(
-                    Modifier.size(15f)
+                    Modifier.padding(3f)
+                        .size(15f)
+                        .clip(Shape.RoundedRect(3f))
                         .background(color)
                         .border(.5f, if (count == null) Color.TRANSPARENT else theme.textColor)
-                        .clip(Shape.RoundedRect(3f))
-                        .margin(3f)
                 )
             }
         }
@@ -117,11 +113,11 @@ object Heatmap2dRender {
                 // 小于三周的情况下不显示年月
                 text(
                     if (byWeek.size >= 3) "${year.toString().substring(2)}.${month.toString().padStart(2, '0')}"
-                    else " ", Modifier
-                        .textColor(theme.textColor)
-                        .fontFamily(layout.textTypeface)
-                        .fontSize(layout.textSize)
-                        .margin(3f, 0f)
+                    else " ",
+                    modifier = Modifier.padding(horizontal = 3f),
+                    fontSize = layout.textSize,
+                    textColor = theme.textColor,
+                    fontFamily = layout.textFontFamily
                 )
                 row {
                     for (week in byWeek) week(week)
@@ -139,29 +135,27 @@ object Heatmap2dRender {
             ) {
                 text(
                     title,
-                    Modifier.textColor(theme.titleColor).fontFamily(layout.titleTypeface).fontSize(layout.titleSize)
+                    fontSize = layout.titleSize,
+                    textColor = theme.titleColor,
+                    fontFamily = layout.titleFontFamily
                 )
-                row(Modifier.margin(top = 20f)) {
+                row(Modifier.padding(top = 20f)) {
                     // 最左侧星期
-                    val textModifier = Modifier
-                        .textColor(theme.textColor)
-                        .fontFamily(layout.textTypeface)
-                        .fontSize(layout.textSize)
                     val boxModifier = Modifier.height(16f)
-                    column(Modifier.margin(right = 10f)) {
+                    column(Modifier.padding(right = 10f)) {
                         // 一行字的高度
                         text(
-                            " ", Modifier
-                                .fontFamily(layout.textTypeface)
-                                .fontSize(layout.textSize)
+                            " ",
+                            fontSize = layout.textSize,
+                            fontFamily = layout.textFontFamily
                         )
-                        text("Mon", textModifier)
+                        text("Mon", fontSize = layout.textSize, textColor = theme.textColor, fontFamily = layout.textFontFamily)
                         box(boxModifier)
-                        text("Wed", textModifier)
+                        text("Wed", fontSize = layout.textSize, textColor = theme.textColor, fontFamily = layout.textFontFamily)
                         box(boxModifier)
-                        text("Fri", textModifier)
+                        text("Fri", fontSize = layout.textSize, textColor = theme.textColor, fontFamily = layout.textFontFamily)
                         box(boxModifier)
-                        text("Sat", textModifier)
+                        text("Sat", fontSize = layout.textSize, textColor = theme.textColor, fontFamily = layout.textFontFamily)
                     }
                     // 每月数据
                     for ((index, e) in byMonth.entries.withIndex()) {

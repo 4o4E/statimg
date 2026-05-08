@@ -23,7 +23,8 @@ dependencies {
 
     // skiko
     implementation(skiko("windows-x64"))
-    implementation("top.e404.skiko-util:skiko-util-draw:${Versions.SKIKO_UTIL}")
+    implementation("top.e404.tavolo:tavolo-common:${Versions.TAVOLO}")
+    implementation("top.e404.tavolo:tavolo-graphics:${Versions.TAVOLO}")
 
     // test
     testImplementation(kotlin("test", Versions.KOTLIN))
