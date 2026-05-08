@@ -1,6 +1,7 @@
 .gradle
 .idea
 .kotlin
+.env
 build
 run
 jar
