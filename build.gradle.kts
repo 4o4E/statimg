@@ -5,10 +5,6 @@ plugins {
     application
 }
 
-kotlin {
-    jvmToolchain(11)
-}
-
 allprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.gradle.application")
@@ -75,4 +71,10 @@ allprojects {
             workingDir.mkdir()
         }
     }
+}
+
+tasks.register("manualTest") {
+    group = "verification"
+    description = "运行所有手动渲染测试。"
+    dependsOn(":core:manualTest")
 }

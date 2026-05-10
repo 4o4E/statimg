@@ -1,7 +1,6 @@
 package top.e404.status.render.platform
 
 import org.jetbrains.skia.Color
-import org.jetbrains.skia.Font
 import org.jetbrains.skia.Paint
 import org.jetbrains.skia.PaintMode
 import org.jetbrains.skia.PathEffect
@@ -12,6 +11,7 @@ import top.e404.tavolo.draw.compose.charts.RadarTheme
 import top.e404.tavolo.draw.compose.charts.bar
 import top.e404.tavolo.draw.compose.charts.radar
 import top.e404.tavolo.util.Colors
+import top.e404.tavolo.util.FontManager
 import top.e404.tavolo.util.bytes
 import top.e404.status.render.IConfig
 import top.e404.status.render.feature.Heatmap2dRender
@@ -26,6 +26,19 @@ import kotlin.math.pow
 
 class GithubRender(val config: IConfig) {
     private val fetcher = GithubFetcher(config)
+
+    private fun normalTextStyle(size: Float, color: Int = Color.WHITE) = TextModifier.font(
+        fontSize = size,
+        textColor = color,
+        fontFamily = config.github3d.font.normalFontFamily
+    )
+
+    private fun boldTextStyle(size: Float, color: Int = Color.WHITE) = TextModifier.font(
+        fontSize = size,
+        textColor = color,
+        fontFamily = config.github3d.font.boldFontFamily
+    )
+
     private suspend fun fetchDays(
         username: String,
         end: LocalDateTime
@@ -150,9 +163,7 @@ class GithubRender(val config: IConfig) {
                     row(Modifier.padding(20f)) {
                         text(
                             "$username / $start / $end",
-                            fontSize = 20f,
-                            textColor = Colors.GRAY.argb,
-                            fontFamily = config.github3d.font.normalFontFamily
+                            textModifier = normalTextStyle(20f, Colors.GRAY.argb)
                         )
                     }
                 }
@@ -173,9 +184,7 @@ class GithubRender(val config: IConfig) {
                                     box(Modifier.padding(right = 10f).size(25f).background(lang.skikoColor))
                                     text(
                                         lang.language,
-                                        fontSize = 25f,
-                                        textColor = Color.WHITE,
-                                        fontFamily = config.github3d.font.normalFontFamily
+                                        textModifier = normalTextStyle(25f)
                                     )
                                 }
                             }
@@ -218,7 +227,7 @@ class GithubRender(val config: IConfig) {
                                 pathEffect = PathEffect.makeDash(floatArrayOf(5f, 5f), 0f)
                             },
                             gridFontColor = 0xFFCCCCCC.toInt(),
-                            gridFont = Font(config.github3d.font.normalTypeface, 18F),
+                            gridFont = FontManager.font(config.github3d.font.normalFontFamily, 18F),
                             gridFontProvider = {
                                 val v = 10.0.pow(it).toInt()
                                 if (v > 100) "${v / 1000}k"
@@ -226,7 +235,7 @@ class GithubRender(val config: IConfig) {
                             },
                             labelOuterLength = 40f,
                             labelFixPolicy = RadarFixPolicy.NONE,
-                            labelFont = Font(config.github3d.font.normalTypeface, 25f)
+                            labelFont = FontManager.font(config.github3d.font.normalFontFamily, 25f)
                         )
                         radar(radarTheme, data)
                     }
@@ -240,25 +249,19 @@ class GithubRender(val config: IConfig) {
                     row(Modifier.padding(50f), VerticalAlignment.Bottom) {
                         text(
                             user.contributionsCollection.contributionCalendar.totalContributions.toString(),
-                            fontSize = 40f,
-                            textColor = Color.WHITE,
-                            fontFamily = config.github3d.font.boldFontFamily
+                            textModifier = boldTextStyle(40f)
                         )
                         text(
                             "contributions",
                             modifier = Modifier.padding(left = 20f, right = 50f),
-                            fontSize = 30f,
-                            textColor = Color.WHITE,
-                            fontFamily = config.github3d.font.normalFontFamily
+                            textModifier = normalTextStyle(30f)
                         )
                         row(Modifier.padding(horizontal = 50f), VerticalAlignment.Center) {
                             icon(IconTheme(40f, color = Color.WHITE), config.github3d.icon.star)
                             text(
                                 user.repositories!!.nodes.sumOf { it.stargazerCount }.toString(),
                                 modifier = Modifier.padding(left = 20f, right = 50f),
-                                fontSize = 40f,
-                                textColor = Color.WHITE,
-                                fontFamily = config.github3d.font.normalFontFamily
+                                textModifier = normalTextStyle(40f)
                             )
                         }
                         row(Modifier.padding(horizontal = 50f), VerticalAlignment.Center) {
@@ -266,9 +269,7 @@ class GithubRender(val config: IConfig) {
                             text(
                                 user.repositories!!.nodes.sumOf { it.forkCount }.toString(),
                                 modifier = Modifier.padding(left = 20f, right = 30f),
-                                fontSize = 40f,
-                                textColor = Color.WHITE,
-                                fontFamily = config.github3d.font.normalFontFamily
+                                textModifier = normalTextStyle(40f)
                             )
                         }
 

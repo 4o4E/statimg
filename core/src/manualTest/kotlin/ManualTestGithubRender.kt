@@ -1,4 +1,4 @@
-package top.e404.status.render.test
+package top.e404.status.render.manual
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -6,15 +6,15 @@ import java.io.File
 import java.time.LocalDateTime
 import kotlin.test.Test
 
-class TestGithubRender {
+class ManualTestGithubRender {
 
     @Test
     fun testRenderContribution2d() {
         runBlocking(Dispatchers.IO) {
-            val bytes = TestConfig.githubRender.renderContribution2d(
+            val bytes = ManualTestConfig.githubRender.renderContribution2d(
                 "4o4E",
                 LocalDateTime.now(),
-                TestConfig.themes2d
+                ManualTestConfig.themes2d
             )
             File("github_contribution_2d.png").writeBytes(bytes)
         }
@@ -23,9 +23,9 @@ class TestGithubRender {
     @Test
     fun testRenderContribution3d() {
         runBlocking(Dispatchers.IO) {
-            val bytes = TestConfig.githubRender.renderContribution3d(
+            val bytes = ManualTestConfig.githubRender.renderContribution3d(
                 "4o4e",
-                TestConfig.themes3d
+                ManualTestConfig.themes3d
             )
             File("github_contribution_3d.png").writeBytes(bytes)
         }

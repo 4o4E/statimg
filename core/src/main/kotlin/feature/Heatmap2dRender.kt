@@ -3,12 +3,11 @@ package top.e404.status.render.feature
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.skia.Color
-import org.jetbrains.skia.FontMgr
 import org.jetbrains.skia.Image
 import top.e404.tavolo.draw.compose.*
+import top.e404.tavolo.util.FontManager
 import top.e404.tavolo.util.argb
 import top.e404.status.render.ColorSerializer
-import java.io.File
 import java.time.LocalDate
 
 object Heatmap2dRender {
@@ -28,12 +27,9 @@ object Heatmap2dRender {
         @SerialName("bar_height") val barHeight: Float = 10F,
         @SerialName("bar_width") val barWidth: Float = 280F
     ) {
-        val titleFontFamily by lazy { ComposeFontManager.registerFile("heatmap2d-title", File(titleFontFile)) }
-        val langFontFamily by lazy { ComposeFontManager.registerFile("heatmap2d-lang", File(langFontFile)) }
-        val textFontFamily by lazy { ComposeFontManager.registerFile("heatmap2d-text", File(textFontFile)) }
-        val titleTypeface by lazy { FontMgr.default.makeFromFile(titleFontFile)!! }
-        val langTypeface by lazy { FontMgr.default.makeFromFile(langFontFile)!! }
-        val textTypeface by lazy { FontMgr.default.makeFromFile(textFontFile)!! }
+        val titleFontFamily by lazy { FontManager.registerFile("heatmap2d-title", titleFontFile) }
+        val langFontFamily by lazy { FontManager.registerFile("heatmap2d-lang", langFontFile) }
+        val textFontFamily by lazy { FontManager.registerFile("heatmap2d-text", textFontFile) }
     }
 
     @Serializable
@@ -74,6 +70,16 @@ object Heatmap2dRender {
         layout: Layout,
         theme: Theme
     ): Image {
+        val titleTextStyle = TextModifier.font(
+            fontSize = layout.titleSize,
+            textColor = theme.titleColor,
+            fontFamily = layout.titleFontFamily
+        )
+        val bodyTextStyle = TextModifier.font(
+            fontSize = layout.textSize,
+            textColor = theme.textColor,
+            fontFamily = layout.textFontFamily
+        )
         val (_, sr, sg, sb) = theme.bgColor.argb()
         val (_, er, eg, eb) = theme.titleColor.argb()
         fun getColor(count: Int): Int {
@@ -115,9 +121,7 @@ object Heatmap2dRender {
                     if (byWeek.size >= 3) "${year.toString().substring(2)}.${month.toString().padStart(2, '0')}"
                     else " ",
                     modifier = Modifier.padding(horizontal = 3f),
-                    fontSize = layout.textSize,
-                    textColor = theme.textColor,
-                    fontFamily = layout.textFontFamily
+                    textModifier = bodyTextStyle
                 )
                 row {
                     for (week in byWeek) week(week)
@@ -128,16 +132,14 @@ object Heatmap2dRender {
         return render {
             column(
                 Modifier
-                    .padding(20f)
-                    .background(theme.bgColor)
                     .clip(Shape.RoundedRect(layout.bgRadii))
+                    .background(theme.bgColor)
                     .border(.5f, theme.bolderColor)
+                    .padding(layout.margin)
             ) {
                 text(
                     title,
-                    fontSize = layout.titleSize,
-                    textColor = theme.titleColor,
-                    fontFamily = layout.titleFontFamily
+                    textModifier = titleTextStyle
                 )
                 row(Modifier.padding(top = 20f)) {
                     // 最左侧星期
@@ -146,16 +148,15 @@ object Heatmap2dRender {
                         // 一行字的高度
                         text(
                             " ",
-                            fontSize = layout.textSize,
-                            fontFamily = layout.textFontFamily
+                            textModifier = bodyTextStyle
                         )
-                        text("Mon", fontSize = layout.textSize, textColor = theme.textColor, fontFamily = layout.textFontFamily)
+                        text("Mon", textModifier = bodyTextStyle)
                         box(boxModifier)
-                        text("Wed", fontSize = layout.textSize, textColor = theme.textColor, fontFamily = layout.textFontFamily)
+                        text("Wed", textModifier = bodyTextStyle)
                         box(boxModifier)
-                        text("Fri", fontSize = layout.textSize, textColor = theme.textColor, fontFamily = layout.textFontFamily)
+                        text("Fri", textModifier = bodyTextStyle)
                         box(boxModifier)
-                        text("Sat", fontSize = layout.textSize, textColor = theme.textColor, fontFamily = layout.textFontFamily)
+                        text("Sat", textModifier = bodyTextStyle)
                     }
                     // 每月数据
                     for ((index, e) in byMonth.entries.withIndex()) {

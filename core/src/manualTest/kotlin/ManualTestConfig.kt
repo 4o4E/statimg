@@ -1,4 +1,4 @@
-package top.e404.status.render.test
+package top.e404.status.render.manual
 
 import com.charleskorn.kaml.PolymorphismStyle
 import com.charleskorn.kaml.Yaml
@@ -11,7 +11,7 @@ import top.e404.status.render.platform.GithubRender
 import top.e404.status.render.platform.WakatimeRender
 import java.io.File
 
-object TestConfig {
+object ManualTestConfig {
     val yaml = Yaml(configuration = YamlConfiguration(strictMode = false, polymorphismStyle = PolymorphismStyle.Property))
     val config = yaml.decodeFromString<Config>(File("config.yml").readText())
     val wakatimeRender: WakatimeRender = WakatimeRender(config)

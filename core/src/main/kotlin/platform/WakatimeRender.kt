@@ -17,6 +17,24 @@ class WakatimeRender(val config: IConfig) {
     private val barWidth inline get() = layout.barWidth
     private val client inline get() = config.client
 
+    private fun titleTextStyle(theme: Heatmap2dRender.Theme) = TextModifier.font(
+        fontSize = layout.titleSize,
+        textColor = theme.titleColor,
+        fontFamily = layout.titleFontFamily
+    )
+
+    private fun langTextStyle(theme: Heatmap2dRender.Theme) = TextModifier.font(
+        fontSize = layout.textSize,
+        textColor = theme.textColor,
+        fontFamily = layout.langFontFamily
+    )
+
+    private fun bodyTextStyle(theme: Heatmap2dRender.Theme) = TextModifier.font(
+        fontSize = layout.textSize,
+        textColor = theme.textColor,
+        fontFamily = layout.textFontFamily
+    )
+
     suspend fun renderLang(user: String, range: FetchRange, allLang: Boolean, theme: Heatmap2dRender.Theme): ByteArray {
         val stats = fetchUserStats(user, range)
         val statsList = stats["languages"]!!.jsonArray.map {
@@ -40,17 +58,16 @@ class WakatimeRender(val config: IConfig) {
 
     private fun renderStats(title: String, statsList: List<StatsItem>, theme: Heatmap2dRender.Theme) = render {
         column(
-            modifier = Modifier.padding(25f)
-                .background(theme.bgColor)
+            modifier = Modifier
                 .clip(Shape.RoundedRect(layout.bgRadii))
+                .background(theme.bgColor)
                 .border(.5f, theme.bolderColor)
+                .padding(layout.margin)
         ) {
             text(
                 title,
                 modifier = Modifier.padding(bottom = 20f),
-                fontSize = layout.titleSize,
-                textColor = theme.titleColor,
-                fontFamily = layout.titleFontFamily
+                textModifier = titleTextStyle(theme)
             )
             statsList(statsList, theme)
         }
@@ -67,9 +84,7 @@ class WakatimeRender(val config: IConfig) {
                     ) {
                         text(
                             lang.name,
-                            fontSize = layout.textSize,
-                            textColor = theme.textColor,
-                            fontFamily = layout.langFontFamily
+                            textModifier = langTextStyle(theme)
                         )
                     }
                     cell(
@@ -99,9 +114,7 @@ class WakatimeRender(val config: IConfig) {
                     ) {
                         text(
                             lang.duration,
-                            fontSize = layout.textSize,
-                            textColor = theme.textColor,
-                            fontFamily = layout.textFontFamily
+                            textModifier = bodyTextStyle(theme)
                         )
                     }
                 }

@@ -1,4 +1,4 @@
-package top.e404.status.render.test
+package top.e404.status.render.manual
 
 import org.junit.jupiter.api.Test
 import top.e404.status.render.feature.Heatmap3dRender
@@ -6,7 +6,7 @@ import java.io.File
 import java.time.LocalDate
 import kotlin.random.Random
 
-class TestHeatmap3dRender {
+class ManualTestHeatmap3dRender {
     val maxValue = 6
 
     @Test
@@ -17,7 +17,7 @@ class TestHeatmap3dRender {
             now.minusDays(365L - it) to value
         }.toMutableList()
         Heatmap3dRender.render(
-            data, TestConfig.config.layout3d, TestConfig.themes3d
+            data, ManualTestConfig.config.layout3d, ManualTestConfig.themes3d
         ).encodeToData()!!.let { data ->
             File("heatmap3d.png").writeBytes(data.bytes)
         }
