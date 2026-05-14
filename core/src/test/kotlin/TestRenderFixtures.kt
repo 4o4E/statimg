@@ -4,12 +4,17 @@ import org.jetbrains.skia.*
 import top.e404.status.render.feature.ColorProvider
 import top.e404.status.render.feature.Heatmap2dRender
 import top.e404.status.render.feature.Heatmap3dRender
+import java.io.File
 import java.time.LocalDate
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 object TestRenderFixtures {
-    val layout2d = Heatmap2dRender.Layout()
+    val layout2d = Heatmap2dRender.Layout(
+        titleFontFile = testFont("bold"),
+        langFontFile = testFont("bold"),
+        textFontFile = testFont("regular")
+    )
     val theme2d = Heatmap2dRender.Theme()
 
     val layout3d = Heatmap3dRender.Layout(
@@ -82,4 +87,24 @@ object TestRenderFixtures {
             index % 5 == 0 -> 0
             else -> (index * 7 % 18) + 1
         }
+
+    private fun testFont(weight: String): String {
+        val candidates = when (weight) {
+            "bold" -> listOf(
+                "font/JetBrainsMono-Bold.ttf",
+                "C:/Windows/Fonts/consolab.ttf",
+                "C:/Windows/Fonts/arialbd.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+            )
+            else -> listOf(
+                "font/JetBrainsMono-Medium.ttf",
+                "C:/Windows/Fonts/consola.ttf",
+                "C:/Windows/Fonts/arial.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/System/Library/Fonts/Supplemental/Arial.ttf"
+            )
+        }
+        return candidates.firstOrNull { File(it).isFile } ?: candidates.first()
+    }
 }
