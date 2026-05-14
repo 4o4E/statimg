@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.Image
+import top.e404.status.render.FontFileResolver
 import top.e404.tavolo.draw.compose.*
 import top.e404.tavolo.util.FontManager
 import top.e404.tavolo.util.argb
@@ -27,9 +28,9 @@ object Heatmap2dRender {
         @SerialName("bar_height") val barHeight: Float = 10F,
         @SerialName("bar_width") val barWidth: Float = 280F
     ) {
-        val titleFontFamily by lazy { FontManager.registerFile("heatmap2d-title", titleFontFile) }
-        val langFontFamily by lazy { FontManager.registerFile("heatmap2d-lang", langFontFile) }
-        val textFontFamily by lazy { FontManager.registerFile("heatmap2d-text", textFontFile) }
+        val titleFontFamily by lazy { FontManager.registerFile("heatmap2d-title", FontFileResolver.resolve(titleFontFile)) }
+        val langFontFamily by lazy { FontManager.registerFile("heatmap2d-lang", FontFileResolver.resolve(langFontFile)) }
+        val textFontFamily by lazy { FontManager.registerFile("heatmap2d-text", FontFileResolver.resolve(textFontFile)) }
     }
 
     @Serializable

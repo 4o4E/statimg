@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     name: Test
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -27,8 +27,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Install JetBrains Mono
+        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/install_manual.sh)"
+
       - name: Run tests
-        run: .\gradlew.bat test
+        run: ./gradlew test
 
   image:
     name: Build and Push Image

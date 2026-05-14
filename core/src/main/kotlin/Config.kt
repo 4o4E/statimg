@@ -33,8 +33,8 @@ data class Github3d(
         val normal: String = "font/JetBrainsMono-Medium.ttf",
         val bold: String = "font/JetBrainsMono-Bold.ttf",
     ) {
-        val normalFontFamily by lazy { FontManager.registerFile("github3d-normal", normal) }
-        val boldFontFamily by lazy { FontManager.registerFile("github3d-bold", bold) }
+        val normalFontFamily by lazy { FontManager.registerFile("github3d-normal", FontFileResolver.resolve(normal)) }
+        val boldFontFamily by lazy { FontManager.registerFile("github3d-bold", FontFileResolver.resolve(bold)) }
     }
 
     @Serializable

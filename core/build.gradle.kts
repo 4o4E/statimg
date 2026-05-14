@@ -13,6 +13,17 @@ val manualTest by sourceSets.creating {
 configurations[manualTest.implementationConfigurationName].extendsFrom(configurations.testImplementation.get())
 configurations[manualTest.runtimeOnlyConfigurationName].extendsFrom(configurations.testRuntimeOnly.get())
 
+fun currentSkikoTarget(): String {
+    val os = System.getProperty("os.name").lowercase()
+    val arch = System.getProperty("os.arch").lowercase()
+    val suffix = if (arch == "aarch64" || arch == "arm64") "arm64" else "x64"
+    return when {
+        os.contains("windows") -> "windows-$suffix"
+        os.contains("linux") -> "linux-$suffix"
+        else -> error("Unsupported OS for core Skiko runtime: $os")
+    }
+}
+
 dependencies {
     // slf4j
     implementation("org.slf4j:slf4j-api:2.0.7")
@@ -32,7 +43,7 @@ dependencies {
     api(kotlinx("serialization-json", "1.5.0"))
 
     // skiko
-    implementation(skiko("windows-x64"))
+    implementation(skiko(currentSkikoTarget()))
     implementation("top.e404.tavolo:tavolo-common:${Versions.TAVOLO}")
     implementation("top.e404.tavolo:tavolo-graphics:${Versions.TAVOLO}")
 

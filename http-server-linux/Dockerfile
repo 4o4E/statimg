@@ -13,6 +13,7 @@ RUN sed -i s/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/i /etc/apt/sources.
     apt-get install -y --no-install-recommends \
     gosu \
     ca-certificates \
+    curl unzip \
     libgl1 fontconfig \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache
@@ -26,7 +27,9 @@ COPY --from=jre_source "$JAVA_HOME" "$JAVA_HOME"
 
 COPY enterpoint.sh /enterpoint.sh
 RUN chmod +x /enterpoint.sh && \
-    useradd --shell /bin/bash -u 1001 -m java
+    useradd --shell /bin/bash -u 1001 -m java && \
+    HOME=/home/java /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/install_manual.sh)" && \
+    chown -R java:java /home/java/.local
 
 WORKDIR /app
 COPY config.template.yml config.yml
