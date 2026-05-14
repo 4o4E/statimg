@@ -6,9 +6,7 @@ FROM ubuntu:24.04
 ENV TZ="Asia/Shanghai"
 
 # 安装依赖
-RUN sed -i s/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/i /etc/apt/sources.list.d/ubuntu.sources && \
-    sed -i s/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/i /etc/apt/sources.list.d/ubuntu.sources && \
-    DEBIAN_FRONTEND=noninteractive \
+RUN DEBIAN_FRONTEND=noninteractive \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     gosu \

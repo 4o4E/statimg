@@ -1,0 +1,11 @@
+.env
+.env.example
+docker-compose.yml
+font
+
+build/distributions
+build/scripts
+build/scriptsShadow
+build/tmp
+build/libs/*.jar
+!build/libs/http-server-linux.jar
