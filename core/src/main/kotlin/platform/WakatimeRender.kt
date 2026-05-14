@@ -96,15 +96,15 @@ class WakatimeRender(val config: IConfig) {
                                 Modifier
                                     .width(layout.barWidth)
                                     .height(layout.barHeight)
-                                    .background(theme.textColor)
                                     .clip(Shape.RoundedRect(50f))
+                                    .background(theme.textColor)
                             )
                             box(
                                 Modifier
                                     .width(max(barWidth * lang.percent / 100, barHeight))
                                     .height(layout.barHeight)
-                                    .background(theme.titleColor)
                                     .clip(Shape.RoundedRect(50f))
+                                    .background(theme.titleColor)
                             )
                         }
                     }

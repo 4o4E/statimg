@@ -1,9 +1,6 @@
 package top.e404.status.render.platform
 
 import org.jetbrains.skia.Color
-import org.jetbrains.skia.Paint
-import org.jetbrains.skia.PaintMode
-import org.jetbrains.skia.PathEffect
 import top.e404.tavolo.draw.compose.*
 import top.e404.tavolo.draw.compose.charts.BarTheme
 import top.e404.tavolo.draw.compose.charts.RadarFixPolicy
@@ -11,7 +8,6 @@ import top.e404.tavolo.draw.compose.charts.RadarTheme
 import top.e404.tavolo.draw.compose.charts.bar
 import top.e404.tavolo.draw.compose.charts.radar
 import top.e404.tavolo.util.Colors
-import top.e404.tavolo.util.FontManager
 import top.e404.tavolo.util.bytes
 import top.e404.status.render.IConfig
 import top.e404.status.render.feature.Heatmap2dRender
@@ -213,21 +209,14 @@ class GithubRender(val config: IConfig) {
                             height = 600f,
                             gridCount = 5,
                             fillColor = 0x77ffc837,
-                            fillOutlinePaint = Paint().apply {
-                                color = 0xffffc837.toInt()
-                                strokeWidth = 5f
-                                mode = PaintMode.STROKE
-                                isAntiAlias = true
-                            },
-                            gridLinePaint = Paint().apply {
-                                color = 0xFFCCCCCC.toInt()
-                                strokeWidth = 1f
-                                isAntiAlias = true
-                                mode = PaintMode.STROKE
-                                pathEffect = PathEffect.makeDash(floatArrayOf(5f, 5f), 0f)
-                            },
+                            fillOutlineColor = 0xffffc837.toInt(),
+                            fillOutlineWidth = 5f,
+                            gridLineColor = 0xFFCCCCCC.toInt(),
+                            gridLineWidth = 1f,
+                            gridLineStyle = StrokeStyle.Dashed(listOf(5f, 5f)),
                             gridFontColor = 0xFFCCCCCC.toInt(),
-                            gridFont = FontManager.font(config.github3d.font.normalFontFamily, 18F),
+                            gridFontSize = 18F,
+                            gridFontFamily = config.github3d.font.normalFontFamily,
                             gridFontProvider = {
                                 val v = 10.0.pow(it).toInt()
                                 if (v > 100) "${v / 1000}k"
@@ -235,7 +224,8 @@ class GithubRender(val config: IConfig) {
                             },
                             labelOuterLength = 40f,
                             labelFixPolicy = RadarFixPolicy.NONE,
-                            labelFont = FontManager.font(config.github3d.font.normalFontFamily, 25f)
+                            labelFontSize = 25f,
+                            labelFontFamily = config.github3d.font.normalFontFamily
                         )
                         radar(radarTheme, data)
                     }
@@ -277,5 +267,46 @@ class GithubRender(val config: IConfig) {
                 }
             }
         }.bytes()
+    }
+
+    suspend fun renderStatsCard(
+        username: String,
+        theme: Heatmap2dRender.Theme,
+        options: GithubStatsRenderOptions = GithubStatsRenderOptions(),
+        excludeRepo: List<String> = emptyList()
+    ): ByteArray {
+        val show = options.show
+        val stats = fetcher.fetchStats(
+            username = username,
+            includeAllCommits = options.includeAllCommits,
+            excludeRepo = excludeRepo,
+            includeMergedPullRequests = "prs_merged" in show || "prs_merged_percentage" in show,
+            includeDiscussions = "discussions_started" in show,
+            includeDiscussionsAnswers = "discussions_answered" in show,
+            commitsYear = options.commitsYear
+        )
+        return GithubCardRender.renderStats(stats, config.layout2d, theme, options).bytes()
+    }
+
+    suspend fun renderTopLanguagesCard(
+        username: String,
+        theme: Heatmap2dRender.Theme,
+        options: GithubLanguagesRenderOptions = GithubLanguagesRenderOptions(),
+        excludeRepo: List<String> = emptyList(),
+        sizeWeight: Double = 1.0,
+        countWeight: Double = 0.0
+    ): ByteArray {
+        val topLangs = fetcher.fetchTopLanguages(username, excludeRepo, sizeWeight, countWeight)
+        return GithubCardRender.renderTopLanguages(topLangs, config.layout2d, theme, options).bytes()
+    }
+
+    suspend fun renderRepoCard(
+        username: String,
+        repo: String,
+        theme: Heatmap2dRender.Theme,
+        options: GithubRepoRenderOptions = GithubRepoRenderOptions()
+    ): ByteArray {
+        val repoData = fetcher.fetchRepo(username, repo)
+        return GithubCardRender.renderRepo(repoData, config.layout2d, theme, options).bytes()
     }
 }
