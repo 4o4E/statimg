@@ -84,24 +84,7 @@ fun Application.routing(wakatimeRender: WakatimeRender, githubRender: GithubRend
         val username = call.parameters["username"]!!
         val theme = call.githubCardTheme()
         val params = call.request.queryParameters
-        val options = GithubStatsRenderOptions(
-            hide = params["hide"].csvSet(),
-            show = params["show"].csvSet(),
-            showIcons = params["show_icons"].toBooleanParam(),
-            hideRank = params["hide_rank"].toBooleanParam(),
-            includeAllCommits = params["include_all_commits"].toBooleanParam(),
-            commitsYear = params["commits_year"]?.toIntOrNull(),
-            rankIcon = when (params["rank_icon"]?.lowercase()) {
-                "percentile" -> GithubStatsRenderOptions.RankIcon.PERCENTILE
-                else -> GithubStatsRenderOptions.RankIcon.DEFAULT
-            },
-            numberFormat = when (params["number_format"]?.lowercase()) {
-                "long" -> GithubStatsRenderOptions.NumberFormat.LONG
-                else -> GithubStatsRenderOptions.NumberFormat.SHORT
-            },
-            numberPrecision = params["number_precision"]?.toIntOrNull(),
-            customTitle = params["custom_title"]
-        )
+        val options = params.githubStatsOptions()
         try {
             call.respondBytes(
                 githubRender.renderStatsCard(
@@ -121,23 +104,7 @@ fun Application.routing(wakatimeRender: WakatimeRender, githubRender: GithubRend
         val username = call.parameters["username"]!!
         val theme = call.githubCardTheme()
         val params = call.request.queryParameters
-        val options = GithubLanguagesRenderOptions(
-            layout = when (params["layout"]?.lowercase()) {
-                "compact" -> GithubLanguagesRenderOptions.Layout.COMPACT
-                "donut" -> GithubLanguagesRenderOptions.Layout.DONUT
-                "donut-vertical", "donut_vertical" -> GithubLanguagesRenderOptions.Layout.DONUT_VERTICAL
-                "pie" -> GithubLanguagesRenderOptions.Layout.PIE
-                else -> GithubLanguagesRenderOptions.Layout.NORMAL
-            },
-            langsCount = params["langs_count"]?.toIntOrNull(),
-            hide = params["hide"].csvSet(),
-            hideProgress = params["hide_progress"].toBooleanParam(),
-            statsFormat = when (params["stats_format"]?.lowercase()) {
-                "bytes" -> GithubLanguagesRenderOptions.StatsFormat.BYTES
-                else -> GithubLanguagesRenderOptions.StatsFormat.PERCENTAGES
-            },
-            customTitle = params["custom_title"]
-        )
+        val options = params.githubLanguagesOptions()
         try {
             call.respondBytes(
                 githubRender.renderTopLanguagesCard(
@@ -160,10 +127,7 @@ fun Application.routing(wakatimeRender: WakatimeRender, githubRender: GithubRend
         val repo = call.parameters["repo"]!!
         val theme = call.githubCardTheme()
         val params = call.request.queryParameters
-        val options = GithubRepoRenderOptions(
-            showOwner = params["show_owner"].toBooleanParam(),
-            descriptionLinesCount = params["description_lines_count"]?.toIntOrNull()
-        )
+        val options = params.githubRepoOptions()
         try {
             call.respondBytes(githubRender.renderRepoCard(owner, repo, theme, options), ContentType.Image.PNG)
         } catch (e: Exception) {
@@ -174,6 +138,48 @@ fun Application.routing(wakatimeRender: WakatimeRender, githubRender: GithubRend
 
 private fun ApplicationCall.githubCardTheme(): Heatmap2dRender.Theme =
     request.queryParameters["theme"]?.let { ServerConfig.config.themes2d[it] } ?: Heatmap2dRender.Theme.default
+
+internal fun Parameters.githubStatsOptions(): GithubStatsRenderOptions = GithubStatsRenderOptions(
+    hide = this["hide"].csvSet(),
+    show = this["show"].csvSet(),
+    showIcons = this["show_icons"].toBooleanParam(),
+    hideRank = this["hide_rank"].toBooleanParam(),
+    includeAllCommits = this["include_all_commits"].toBooleanParam(),
+    commitsYear = this["commits_year"]?.toIntOrNull(),
+    rankIcon = when (this["rank_icon"]?.lowercase()) {
+        "percentile" -> GithubStatsRenderOptions.RankIcon.PERCENTILE
+        else -> GithubStatsRenderOptions.RankIcon.DEFAULT
+    },
+    numberFormat = when (this["number_format"]?.lowercase()) {
+        "long" -> GithubStatsRenderOptions.NumberFormat.LONG
+        else -> GithubStatsRenderOptions.NumberFormat.SHORT
+    },
+    numberPrecision = this["number_precision"]?.toIntOrNull(),
+    customTitle = this["custom_title"]
+)
+
+internal fun Parameters.githubLanguagesOptions(): GithubLanguagesRenderOptions = GithubLanguagesRenderOptions(
+    layout = when (this["layout"]?.lowercase()) {
+        "compact" -> GithubLanguagesRenderOptions.Layout.COMPACT
+        "donut" -> GithubLanguagesRenderOptions.Layout.DONUT
+        "donut-vertical", "donut_vertical" -> GithubLanguagesRenderOptions.Layout.DONUT_VERTICAL
+        "pie" -> GithubLanguagesRenderOptions.Layout.PIE
+        else -> GithubLanguagesRenderOptions.Layout.NORMAL
+    },
+    langsCount = this["langs_count"]?.toIntOrNull(),
+    hide = this["hide"].csvSet(),
+    hideProgress = this["hide_progress"].toBooleanParam(),
+    statsFormat = when (this["stats_format"]?.lowercase()) {
+        "bytes" -> GithubLanguagesRenderOptions.StatsFormat.BYTES
+        else -> GithubLanguagesRenderOptions.StatsFormat.PERCENTAGES
+    },
+    customTitle = this["custom_title"]
+)
+
+internal fun Parameters.githubRepoOptions(): GithubRepoRenderOptions = GithubRepoRenderOptions(
+    showOwner = this["show_owner"].toBooleanParam(),
+    descriptionLinesCount = this["description_lines_count"]?.toIntOrNull()
+)
 
 private fun String?.toBooleanParam(): Boolean = this?.equals("true", ignoreCase = true) == true
 

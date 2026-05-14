@@ -32,6 +32,8 @@ dependencies {
     implementation(kotlinx("serialization-json", "1.5.0"))
     // kaml
     implementation(kaml)
+
+    testImplementation(kotlin("test", Versions.KOTLIN))
 }
 
 tasks {

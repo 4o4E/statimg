@@ -341,6 +341,8 @@ data class GithubCardTheme(
 
 ## 10. HTTP API 建议
 
+已实现接口的使用说明见 [`github-http-api.md`](github-http-api.md)。本节保留为迁移阶段的接口设计记录。
+
 为了贴近上游接口，同时符合本项目已有 `/github/...` 风格，可以新增：
 
 - `GET /github/stats/{username}`
@@ -411,4 +413,3 @@ Repo：
 - 上游 SVG 使用 CSS 动画，本项目 PNG 静态输出时需要舍弃或转为固定最终状态。
 - 字体测量差异会导致布局宽度和换行与 SVG 版本不同；需要以视觉稳定为目标，而不是逐像素一致。
 - README、接口文档和错误处理需要统一字符编码，当前控制台读取 README 时出现乱码，后续编辑文档应确认 UTF-8。
-
