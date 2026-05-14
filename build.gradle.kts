@@ -28,7 +28,6 @@ allprojects {
         // skiko
         implementation(skiko(
             when (os) {
-                "mac" -> "macos-x64"
                 "win" -> "windows-x64"
                 else -> "linux-x64"
             }

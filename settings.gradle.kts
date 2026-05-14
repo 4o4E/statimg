@@ -4,5 +4,4 @@ include(
     "http-server",
     "http-server-win",
     "http-server-linux",
-    "http-server-mac",
 )
