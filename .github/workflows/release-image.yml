@@ -42,6 +42,11 @@ jobs:
       - name: Test and build Linux fat jar
         run: ./gradlew :core:test :http-server:test :http-server-linux:shadowJar --parallel --build-cache
 
+      - name: Publish core to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :core:publish -Pversion="${RELEASE_TAG#v}" --build-cache
+
       - name: Prepare release asset
         run: |
           mkdir -p dist

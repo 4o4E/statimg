@@ -11,7 +11,7 @@ allprojects {
     apply(plugin = "com.github.johnrengelman.shadow")
 
     group = Versions.GROUP
-    version = Versions.VERSION
+    version = providers.gradleProperty("version").orElse(Versions.VERSION).get()
 
     repositories {
         mavenCentral()

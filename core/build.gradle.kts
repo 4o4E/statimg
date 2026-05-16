@@ -1,6 +1,9 @@
+import org.gradle.api.component.AdhocComponentWithVariants
+
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+    `maven-publish`
 }
 
 val manualTest by sourceSets.creating {
@@ -51,6 +54,60 @@ dependencies {
     testImplementation(kotlin("test", Versions.KOTLIN))
     // kaml
     testImplementation(kaml)
+}
+
+java {
+    withSourcesJar()
+}
+
+(components["java"] as AdhocComponentWithVariants).withVariantsFromConfiguration(configurations["shadowRuntimeElements"]) {
+    skip()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("core") {
+            from(components["java"])
+            artifactId = "github-readme-stats-render-core"
+
+            pom {
+                name.set("github-readme-stats-render-core")
+                description.set("Core rendering and fetching library for github-readme-stats-render.")
+                url.set("https://github.com/4o4E/github-readme-stats-render")
+
+                licenses {
+                    license {
+                        name.set("GNU General Public License v3.0")
+                        url.set("https://www.gnu.org/licenses/gpl-3.0.txt")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("4o4E")
+                        name.set("4o4E")
+                    }
+                }
+
+                scm {
+                    url.set("https://github.com/4o4E/github-readme-stats-render")
+                    connection.set("scm:git:https://github.com/4o4E/github-readme-stats-render.git")
+                    developerConnection.set("scm:git:https://github.com/4o4E/github-readme-stats-render.git")
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/4o4E/github-readme-stats-render")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
 
 tasks.register<Test>("manualTest") {
