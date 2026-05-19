@@ -34,7 +34,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Install JetBrains Mono
-        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/install_manual.sh)"
+        run: |
+          mkdir -p ~/.local/share/fonts/JetBrainsMono
+          curl -fsSL https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip -o /tmp/JetBrainsMono.zip
+          unzip -q /tmp/JetBrainsMono.zip -d /tmp/JetBrainsMono
+          cp /tmp/JetBrainsMono/fonts/ttf/*.ttf ~/.local/share/fonts/JetBrainsMono/
+          fc-cache -f
 
       - name: Test and build Linux fat jar
         run: |
