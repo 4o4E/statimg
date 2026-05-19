@@ -69,10 +69,7 @@ jobs:
             --build-cache
 
           if [[ "$VERSION" == *-SNAPSHOT ]]; then
-            ./gradlew \
-              :core:publishToMavenCentral \
-              :http-client:publishToMavenCentral \
-              --build-cache
+            echo "Snapshot version only publishes to Nexus"
           else
             ./gradlew \
               :core:publishAndReleaseToMavenCentral \
