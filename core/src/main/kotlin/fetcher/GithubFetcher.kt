@@ -1,4 +1,4 @@
-package top.e404.status.render.fetcher
+package top.e404.statimg.fetcher
 
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -6,7 +6,7 @@ import io.ktor.http.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
-import top.e404.status.render.IConfig
+import top.e404.statimg.IConfig
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.pow
@@ -250,7 +250,7 @@ class GithubFetcher(val config: IConfig) {
             .sumOf { node -> node.jsonObject["stargazers"]!!.jsonObject["totalCount"]!!.jsonPrimitive.int }
         val followers = user["followers"]!!.jsonObject["totalCount"]!!.jsonPrimitive.int
         val reviews = user["reviews"]!!.jsonObject["totalPullRequestReviewContributions"]!!.jsonPrimitive.int
-        val rank = top.e404.status.render.platform.GithubRankCalculator.calculate(
+        val rank = top.e404.statimg.platform.GithubRankCalculator.calculate(
             allCommits = includeAllCommits,
             commits = commits,
             prs = totalPRs,

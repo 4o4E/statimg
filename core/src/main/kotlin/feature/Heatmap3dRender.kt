@@ -1,4 +1,4 @@
-package top.e404.status.render.feature
+package top.e404.statimg.feature
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -8,7 +8,7 @@ import org.jetbrains.skia.Image
 import top.e404.tavolo.draw.render3d.*
 import top.e404.tavolo.util.Ahsb
 import top.e404.tavolo.util.ahsb
-import top.e404.status.render.ColorSerializer
+import top.e404.statimg.ColorSerializer
 import java.time.LocalDate
 import kotlin.math.ceil
 import kotlin.math.log10

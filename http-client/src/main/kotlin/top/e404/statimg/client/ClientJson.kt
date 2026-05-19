@@ -1,4 +1,4 @@
-package top.e404.status.render.client
+package top.e404.statimg.client
 
 import kotlinx.serialization.json.Json
 

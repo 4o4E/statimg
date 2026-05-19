@@ -1,4 +1,4 @@
-package top.e404.status.render.platform
+package top.e404.statimg.platform
 
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.ClipMode
@@ -10,11 +10,11 @@ import org.jetbrains.skia.PaintStrokeCap
 import org.jetbrains.skia.RRect
 import org.jetbrains.skia.Rect
 import org.jetbrains.skia.Surface
-import top.e404.status.render.feature.Heatmap2dRender
-import top.e404.status.render.fetcher.GithubLanguageStat
-import top.e404.status.render.fetcher.GithubRank
-import top.e404.status.render.fetcher.GithubRepoCardData
-import top.e404.status.render.fetcher.GithubStats
+import top.e404.statimg.feature.Heatmap2dRender
+import top.e404.statimg.fetcher.GithubLanguageStat
+import top.e404.statimg.fetcher.GithubRank
+import top.e404.statimg.fetcher.GithubRepoCardData
+import top.e404.statimg.fetcher.GithubStats
 import top.e404.tavolo.draw.compose.HorizontalAlignment
 import top.e404.tavolo.draw.compose.Modifier
 import top.e404.tavolo.draw.compose.Shape

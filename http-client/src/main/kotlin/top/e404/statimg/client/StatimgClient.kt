@@ -1,4 +1,4 @@
-package top.e404.status.render.client
+package top.e404.statimg.client
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
@@ -14,22 +14,22 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.decodeFromString
 import java.time.LocalDate
 
-class GithubReadmeStatsRenderClient private constructor(
-    private val server: StatusRenderServer,
+class StatimgClient private constructor(
+    private val server: StatimgServer,
     private val httpClient: HttpClient,
     private val closeHttpClient: Boolean,
 ) : AutoCloseable {
-    constructor(server: StatusRenderServer) : this(server, defaultHttpClient(), closeHttpClient = true)
+    constructor(server: StatimgServer) : this(server, defaultHttpClient(), closeHttpClient = true)
 
-    constructor(server: StatusRenderServer, httpClient: HttpClient) : this(server, httpClient, closeHttpClient = false)
+    constructor(server: StatimgServer, httpClient: HttpClient) : this(server, httpClient, closeHttpClient = false)
 
-    constructor(baseUrl: String) : this(StatusRenderServer(baseUrl))
+    constructor(baseUrl: String) : this(StatimgServer(baseUrl))
 
-    constructor(baseUrl: String, httpClient: HttpClient) : this(StatusRenderServer(baseUrl), httpClient)
+    constructor(baseUrl: String, httpClient: HttpClient) : this(StatimgServer(baseUrl), httpClient)
 
-    constructor(baseUrl: Url) : this(StatusRenderServer(baseUrl))
+    constructor(baseUrl: Url) : this(StatimgServer(baseUrl))
 
-    constructor(baseUrl: Url, httpClient: HttpClient) : this(StatusRenderServer(baseUrl), httpClient)
+    constructor(baseUrl: Url, httpClient: HttpClient) : this(StatimgServer(baseUrl), httpClient)
 
     suspend fun wakatimeThemes(): List<String> = getJson(listOf("wakatime", "themes"))
 
@@ -148,15 +148,15 @@ class GithubReadmeStatsRenderClient private constructor(
             }
         }.buildString()
 
-    private suspend fun HttpResponse.toException(): StatusRenderHttpException =
-        StatusRenderHttpException(status, bodyAsText())
+    private suspend fun HttpResponse.toException(): StatimgHttpException =
+        StatimgHttpException(status, bodyAsText())
 
     companion object {
         fun defaultHttpClient(): HttpClient = HttpClient(OkHttp)
     }
 }
 
-class StatusRenderHttpException(
+class StatimgHttpException(
     val status: HttpStatusCode,
     val responseText: String,
-) : RuntimeException("GitHub readme stats render request failed: ${status.value} ${status.description}; $responseText")
+) : RuntimeException("statimg request failed: ${status.value} ${status.description}; $responseText")

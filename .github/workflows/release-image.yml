@@ -80,14 +80,14 @@ jobs:
       - name: Prepare release asset
         run: |
           mkdir -p dist
-          cp http-server-linux/build/libs/http-server-linux.jar "dist/github-readme-stats-render-${RELEASE_TAG}.jar"
+          cp http-server-linux/build/libs/http-server-linux.jar "dist/statimg-${RELEASE_TAG}.jar"
 
       - name: Upload fat jar to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes
-          gh release upload "$RELEASE_TAG" "dist/github-readme-stats-render-${RELEASE_TAG}.jar" --clobber
+          gh release upload "$RELEASE_TAG" "dist/statimg-${RELEASE_TAG}.jar" --clobber
 
       - name: Set image name
         id: image

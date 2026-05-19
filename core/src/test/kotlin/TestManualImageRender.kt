@@ -1,4 +1,4 @@
-package top.e404.status.render.test
+package top.e404.statimg.test
 
 import org.junit.jupiter.api.Test
 import top.e404.tavolo.draw.compose.Modifier

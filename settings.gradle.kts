@@ -1,4 +1,4 @@
-rootProject.name = "github-readme-stats-render"
+rootProject.name = "statimg"
 include(
     "core",
     "http-client",

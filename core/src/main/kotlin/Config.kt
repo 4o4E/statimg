@@ -1,14 +1,19 @@
-package top.e404.status.render
+package top.e404.statimg
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.HttpTimeout
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import top.e404.tavolo.util.FontManager
-import top.e404.status.render.feature.Heatmap3dRender
-import top.e404.status.render.feature.Heatmap2dRender
+import top.e404.statimg.feature.Heatmap3dRender
+import top.e404.statimg.feature.Heatmap2dRender
 import java.net.InetSocketAddress
 import java.net.Proxy
+
+private const val CONNECT_TIMEOUT_MILLIS = 15_000L
+private const val REQUEST_TIMEOUT_MILLIS = 90_000L
+private const val SOCKET_TIMEOUT_MILLIS = 90_000L
 
 interface IConfig {
     val proxyConfig: ProxyConfig?
@@ -61,14 +66,7 @@ open class Config : IConfig {
 
     override val client by lazy {
         HttpClient(OkHttp) {
-            engine {
-                config {
-                    followRedirects(true)
-                }
-                proxyConfig?.let {
-                    proxy = it.toProxy()
-                }
-            }
+            statimgHttpClientDefaults(proxyConfig)
         }
     }
 }
@@ -79,5 +77,32 @@ data class ProxyConfig(
     val host: String = "localhost",
     val port: Int = 7890
 ) {
-    fun toProxy() = Proxy(Proxy.Type.valueOf(type.uppercase()), InetSocketAddress(host, port))
+    fun toProxy(): Proxy {
+        val proxyType = toProxyType()
+        if (proxyType == Proxy.Type.DIRECT) return Proxy.NO_PROXY
+        return Proxy(proxyType, InetSocketAddress(host, port))
+    }
+
+    fun toProxyType(): Proxy.Type = when (type.trim().lowercase()) {
+        "http" -> Proxy.Type.HTTP
+        "socks", "sock", "socket" -> Proxy.Type.SOCKS
+        "direct", "none", "no_proxy" -> Proxy.Type.DIRECT
+        else -> error("不支持的代理类型: $type, 可用值: http/socks/direct")
+    }
+}
+
+fun HttpClientConfig<OkHttpConfig>.statimgHttpClientDefaults(proxyConfig: ProxyConfig?) {
+    install(HttpTimeout) {
+        connectTimeoutMillis = CONNECT_TIMEOUT_MILLIS
+        requestTimeoutMillis = REQUEST_TIMEOUT_MILLIS
+        socketTimeoutMillis = SOCKET_TIMEOUT_MILLIS
+    }
+    engine {
+        config {
+            followRedirects(true)
+        }
+        proxyConfig?.let {
+            proxy = it.toProxy()
+        }
+    }
 }

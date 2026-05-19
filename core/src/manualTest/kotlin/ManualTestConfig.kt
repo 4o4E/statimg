@@ -1,14 +1,14 @@
-package top.e404.status.render.manual
+package top.e404.statimg.manual
 
 import com.charleskorn.kaml.PolymorphismStyle
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
 import kotlinx.serialization.decodeFromString
-import top.e404.status.render.Config
-import top.e404.status.render.feature.Heatmap2dRender
-import top.e404.status.render.feature.Heatmap3dRender
-import top.e404.status.render.platform.GithubRender
-import top.e404.status.render.platform.WakatimeRender
+import top.e404.statimg.Config
+import top.e404.statimg.feature.Heatmap2dRender
+import top.e404.statimg.feature.Heatmap3dRender
+import top.e404.statimg.platform.GithubRender
+import top.e404.statimg.platform.WakatimeRender
 import java.io.File
 
 object ManualTestConfig {

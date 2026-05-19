@@ -4,7 +4,7 @@ host: {SERVER_HOST}
 port: {SERVER_PORT}
 # 设置为null不走代理
 proxy:
-  type: {PROXY_TYPE} # socket/http
+  type: {PROXY_TYPE} # socks/http
   host: {PROXY_HOST}
   port: {PROXY_PORT}
 # wakatime token, 在 https://wakatime.com/settings/account 获取

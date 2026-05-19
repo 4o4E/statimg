@@ -4,7 +4,7 @@ host: localhost
 port: 2345
 # 设置为null不走代理
 proxy:
-  type: socket # socket/http
+  type: socks # socks/http
   host: localhost
   port: 7890
 # wakatime token, 在 https://wakatime.com/settings/account 获取

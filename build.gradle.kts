@@ -24,14 +24,14 @@ val ciReleaseVersion = providers.environmentVariable("GITHUB_REF_NAME")
 val publishVersion = providers.provider {
     if (isReleaseCi.get()) ciReleaseVersion.orNull ?: localSnapshotVersion else localSnapshotVersion
 }
-val publishGroup = "top.e404.githubreadmestatsrender"
-val projectUrl = "https://github.com/4o4E/github-readme-stats-render"
+val publishGroup = "top.e404.statimg"
+val projectUrl = "https://github.com/4o4E/statimg"
 val scmConnection = "scm:git:$projectUrl.git"
 val nexusReleasesUrl = "https://nexus.e404.top:3443/repository/maven-releases/"
 val nexusSnapshotsUrl = "https://nexus.e404.top:3443/repository/maven-snapshots/"
 val publishableProjects = mapOf(
-    "core" to "Core rendering and fetching library for github-readme-stats-render.",
-    "http-client" to "Typed Ktor HTTP client for github-readme-stats-render.",
+    "core" to "Offline developer status image rendering and fetching library for statimg.",
+    "http-client" to "Typed Ktor HTTP client for statimg.",
 )
 
 fun nexusCredential(propertyName: String, ciSecretEnvName: String): Provider<String> =
@@ -71,7 +71,7 @@ allprojects {
     }
 
     application {
-        mainClass.set("top.e404.status.render.App")
+        mainClass.set("top.e404.statimg.App")
         applicationDefaultJvmArgs = listOf(
             "-Dio.netty.tryReflectionSetAccessible=true",
             "--add-opens",
@@ -119,7 +119,7 @@ subprojects {
         apply(plugin = "com.vanniktech.maven.publish")
 
         extensions.configure<MavenPublishBaseExtension>("mavenPublishing") {
-            val artifactName = "github-readme-stats-render-${project.name}"
+            val artifactName = "statimg-${project.name}"
 
             coordinates(
                 groupId = rootProject.group.toString(),

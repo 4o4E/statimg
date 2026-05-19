@@ -12,17 +12,17 @@ repositories {
 }
 
 dependencies {
-    implementation("top.e404:github-readme-stats-render-http-client:1.3.2")
+    implementation("top.e404.statimg:statimg-http-client:1.3.2")
 }
 ```
 
 ```kotlin
-import top.e404.status.render.client.GithubReadmeStatsRenderClient
-import top.e404.status.render.client.GithubStatsRankIcon
-import top.e404.status.render.client.GithubStatsRequest
+import top.e404.statimg.client.StatimgClient
+import top.e404.statimg.client.GithubStatsRankIcon
+import top.e404.statimg.client.GithubStatsRequest
 
 suspend fun main() {
-    GithubReadmeStatsRenderClient("http://localhost:2345").use { client ->
+    StatimgClient("http://localhost:2345").use { client ->
         val png = client.githubStats(
             GithubStatsRequest(
                 username = "octocat",
@@ -37,15 +37,15 @@ suspend fun main() {
 
 ## 复用下游 HttpClient
 
-传入外部 `HttpClient` 时，`GithubReadmeStatsRenderClient.close()` 不会关闭该实例，生命周期由调用方管理。
+传入外部 `HttpClient` 时，`StatimgClient.close()` 不会关闭该实例，生命周期由调用方管理。
 
 ```kotlin
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
-import top.e404.status.render.client.GithubReadmeStatsRenderClient
+import top.e404.statimg.client.StatimgClient
 
 suspend fun renderWithSharedClient(httpClient: HttpClient) {
-    val client = GithubReadmeStatsRenderClient(Url("http://localhost:2345"), httpClient)
+    val client = StatimgClient(Url("http://localhost:2345"), httpClient)
     val png = client.githubRepo("octocat", "Hello-World", theme = "dark")
 }
 ```

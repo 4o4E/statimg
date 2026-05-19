@@ -1,6 +1,6 @@
 @file:JvmName("App")
 
-package top.e404.status.render
+package top.e404.statimg
 
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -9,13 +9,13 @@ import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import sun.misc.Signal
 import sun.misc.SignalHandler
-import top.e404.status.render.config.ServerConfig
-import top.e404.status.render.platform.GithubRender
-import top.e404.status.render.platform.WakatimeRender
-import top.e404.status.render.plugin.compression
-import top.e404.status.render.plugin.logging
-import top.e404.status.render.plugin.negotiation
-import top.e404.status.render.plugin.routing
+import top.e404.statimg.config.ServerConfig
+import top.e404.statimg.platform.GithubRender
+import top.e404.statimg.platform.WakatimeRender
+import top.e404.statimg.plugin.compression
+import top.e404.statimg.plugin.logging
+import top.e404.statimg.plugin.negotiation
+import top.e404.statimg.plugin.routing
 import java.io.FileOutputStream
 import java.nio.channels.FileChannel
 import java.nio.channels.FileLock

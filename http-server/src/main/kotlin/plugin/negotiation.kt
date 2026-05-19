@@ -1,4 +1,4 @@
-package top.e404.status.render.plugin
+package top.e404.statimg.plugin
 
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*

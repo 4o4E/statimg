@@ -1,4 +1,4 @@
-package top.e404.status.render.platform
+package top.e404.statimg.platform
 
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -7,11 +7,16 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 import top.e404.tavolo.draw.compose.*
 import top.e404.tavolo.util.bytes
-import top.e404.status.render.IConfig
-import top.e404.status.render.feature.Heatmap2dRender
+import top.e404.statimg.IConfig
+import top.e404.statimg.feature.Heatmap2dRender
 import kotlin.math.max
 
 class WakatimeRender(val config: IConfig) {
+    private companion object {
+        const val CALCULATING_RETRY_LIMIT = 6
+        const val CALCULATING_RETRY_DELAY_MILLIS = 2_000L
+    }
+
     private val layout inline get() = config.layout2d
     private val barHeight inline get() = layout.barHeight
     private val barWidth inline get() = layout.barWidth
@@ -134,20 +139,23 @@ class WakatimeRender(val config: IConfig) {
         )
     }
 
-    private suspend fun fetchUserStats(user: String, range: FetchRange): JsonObject {
+    private suspend fun fetchUserStats(user: String, range: FetchRange, retryCount: Int = 0): JsonObject {
         val response = client.get("https://wakatime.com/api/v1/users/${user}/stats/${range.path}") {
             parameter("is_including_today", true)
             parameter("api_key", config.wakaToken)
         }
         if (response.status == HttpStatusCode.NotFound) error("unknown wakatime user, please register at wakatime.com")
         val jo = response.bodyAsText().let { Json.parseToJsonElement(it).jsonObject }
-        if (jo["message"]?.jsonPrimitive?.content?.contains("Calculating") == true) {
-            delay(500)
-            return fetchUserStats(user, range)
-        }
         val error = jo["error"]?.jsonPrimitive?.content
         if (error != null) throw Exception("unknown error $error")
-        return jo["data"]!!.jsonObject
+
+        jo["data"]?.jsonObject?.let { return it }
+        if (jo["message"]?.jsonPrimitive?.content?.contains("Calculating") == true && retryCount < CALCULATING_RETRY_LIMIT) {
+            // Wakatime 可能先返回计算中状态，短暂等待后再拉取完整数据。
+            delay(CALCULATING_RETRY_DELAY_MILLIS)
+            return fetchUserStats(user, range, retryCount + 1)
+        }
+        error("wakatime response missing data: ${jo["message"]?.jsonPrimitive?.content ?: "unknown message"}")
     }
 
     @Suppress("UNUSED")

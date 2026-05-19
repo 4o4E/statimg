@@ -1,4 +1,4 @@
-package top.e404.status.render.platform
+package top.e404.statimg.platform
 
 import org.jetbrains.skia.Color
 import top.e404.tavolo.draw.compose.*
@@ -9,11 +9,11 @@ import top.e404.tavolo.draw.compose.charts.bar
 import top.e404.tavolo.draw.compose.charts.radar
 import top.e404.tavolo.util.Colors
 import top.e404.tavolo.util.bytes
-import top.e404.status.render.IConfig
-import top.e404.status.render.feature.Heatmap2dRender
-import top.e404.status.render.feature.Heatmap3dRender
-import top.e404.status.render.fetcher.GhUser
-import top.e404.status.render.fetcher.GithubFetcher
+import top.e404.statimg.IConfig
+import top.e404.statimg.feature.Heatmap2dRender
+import top.e404.statimg.feature.Heatmap3dRender
+import top.e404.statimg.fetcher.GhUser
+import top.e404.statimg.fetcher.GithubFetcher
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit

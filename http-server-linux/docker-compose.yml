@@ -1,7 +1,7 @@
 services:
-  github-readme-stats-render:
-    container_name: github-readme-stats-render
-    image: 404e/github-readme-stats-render:1.3.0
+  statimg:
+    container_name: statimg
+    image: 404e/statimg:1.3.0
     env_file:
       - .env
     volumes:

@@ -1,7 +1,7 @@
-package top.e404.status.render.manual
+package top.e404.statimg.manual
 
 import org.junit.jupiter.api.Test
-import top.e404.status.render.feature.Heatmap3dRender
+import top.e404.statimg.feature.Heatmap3dRender
 import java.io.File
 import java.time.LocalDate
 import kotlin.random.Random

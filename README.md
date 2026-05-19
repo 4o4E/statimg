@@ -1,9 +1,9 @@
-# github-readme-stats-render
+# statimg
 
-用于生成[github-readme-status](https://github.com/anuraghazra/github-readme-stats)卡片的渲染图
+用于离线渲染 GitHub 和 Wakatime 等开发者状态图片，适合 QQBot 等不支持 SVG 的场景。
 
-[![Release](https://img.shields.io/github/v/release/4o4E/github-readme-stats-render?label=Release)](https://github.com/4o4E/github-readme-stats-render/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/4o4E/github-readme-stats-render/total?label=Download)](https://github.com/4o4E/github-readme-stats-render/releases)
+[![Release](https://img.shields.io/github/v/release/4o4E/statimg?label=Release)](https://github.com/4o4E/statimg/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/4o4E/statimg/total?label=Download)](https://github.com/4o4E/statimg/releases)
 ## http服务
 
 `http-server`模块供了一个简单的http server用于根据需求生成皮肤渲染图
@@ -11,7 +11,7 @@
 ### 使用
 
 1. 安装11或更高版本的[java](https://adoptium.net/)
-2. 从[release](https://github.com/4o4E/github-readme-stats-render/releases/latest)下载对应操作系统的jar文件
+2. 从[release](https://github.com/4o4E/statimg/releases/latest)下载对应操作系统的jar文件
 3. 在控制台中使用`java -jar http-server-${plateform}.jar`启动服务
 
 [示例配置文件](http-server-linux/config.template.yml)

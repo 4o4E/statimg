@@ -1,4 +1,4 @@
-package top.e404.status.render.manual
+package top.e404.statimg.manual
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking

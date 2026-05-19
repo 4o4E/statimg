@@ -1,4 +1,4 @@
-package top.e404.status.render.plugin
+package top.e404.statimg.plugin
 
 import io.ktor.server.application.Application
 import io.ktor.server.application.install

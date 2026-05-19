@@ -1,9 +1,9 @@
-package top.e404.status.render.test
+package top.e404.statimg.test
 
 import org.jetbrains.skia.*
-import top.e404.status.render.feature.ColorProvider
-import top.e404.status.render.feature.Heatmap2dRender
-import top.e404.status.render.feature.Heatmap3dRender
+import top.e404.statimg.feature.ColorProvider
+import top.e404.statimg.feature.Heatmap2dRender
+import top.e404.statimg.feature.Heatmap3dRender
 import java.time.LocalDate
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue

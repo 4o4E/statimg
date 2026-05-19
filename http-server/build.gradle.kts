@@ -6,7 +6,7 @@ plugins {
 }
 
 application {
-    mainClass.set("top.e404.status.render.App")
+    mainClass.set("top.e404.statimg.App")
     applicationDefaultJvmArgs = listOf(
         "-Dio.netty.tryReflectionSetAccessible=true",
         "--add-opens",

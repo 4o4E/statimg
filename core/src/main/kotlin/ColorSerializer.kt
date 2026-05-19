@@ -1,4 +1,4 @@
-package top.e404.status.render
+package top.e404.statimg
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

@@ -1,4 +1,4 @@
-package top.e404.status.render.fetcher
+package top.e404.statimg.fetcher
 
 import kotlinx.serialization.Serializable
 

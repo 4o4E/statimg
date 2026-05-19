@@ -1,4 +1,4 @@
-package top.e404.status.render.plugin
+package top.e404.statimg.plugin
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -6,13 +6,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import top.e404.status.render.platform.WakatimeRender
-import top.e404.status.render.config.ServerConfig
-import top.e404.status.render.feature.Heatmap2dRender
-import top.e404.status.render.platform.GithubLanguagesRenderOptions
-import top.e404.status.render.platform.GithubRepoRenderOptions
-import top.e404.status.render.platform.GithubRender
-import top.e404.status.render.platform.GithubStatsRenderOptions
+import top.e404.statimg.platform.WakatimeRender
+import top.e404.statimg.config.ServerConfig
+import top.e404.statimg.feature.Heatmap2dRender
+import top.e404.statimg.platform.GithubLanguagesRenderOptions
+import top.e404.statimg.platform.GithubRepoRenderOptions
+import top.e404.statimg.platform.GithubRender
+import top.e404.statimg.platform.GithubStatsRenderOptions
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime

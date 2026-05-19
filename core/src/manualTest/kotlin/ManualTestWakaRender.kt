@@ -1,8 +1,8 @@
-package top.e404.status.render.manual
+package top.e404.statimg.manual
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import top.e404.status.render.platform.WakatimeRender
+import top.e404.statimg.platform.WakatimeRender
 import java.io.File
 import kotlin.test.Test
 

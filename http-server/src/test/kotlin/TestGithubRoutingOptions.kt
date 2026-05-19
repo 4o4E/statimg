@@ -1,12 +1,12 @@
-package top.e404.status.render.test
+package top.e404.statimg.test
 
 import io.ktor.http.Parameters
 import org.junit.jupiter.api.Test
-import top.e404.status.render.platform.GithubLanguagesRenderOptions
-import top.e404.status.render.platform.GithubStatsRenderOptions
-import top.e404.status.render.plugin.githubLanguagesOptions
-import top.e404.status.render.plugin.githubRepoOptions
-import top.e404.status.render.plugin.githubStatsOptions
+import top.e404.statimg.platform.GithubLanguagesRenderOptions
+import top.e404.statimg.platform.GithubStatsRenderOptions
+import top.e404.statimg.plugin.githubLanguagesOptions
+import top.e404.statimg.plugin.githubRepoOptions
+import top.e404.statimg.plugin.githubStatsOptions
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

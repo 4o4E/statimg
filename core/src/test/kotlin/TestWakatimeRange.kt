@@ -1,7 +1,7 @@
-package top.e404.status.render.test
+package top.e404.statimg.test
 
 import org.junit.jupiter.api.Test
-import top.e404.status.render.platform.WakatimeRender
+import top.e404.statimg.platform.WakatimeRender
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 

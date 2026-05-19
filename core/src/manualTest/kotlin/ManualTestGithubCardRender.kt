@@ -1,13 +1,13 @@
-package top.e404.status.render.manual
+package top.e404.statimg.manual
 
-import top.e404.status.render.fetcher.GithubLanguageStat
-import top.e404.status.render.fetcher.GithubRepoCardData
-import top.e404.status.render.fetcher.GithubStats
-import top.e404.status.render.platform.GithubCardRender
-import top.e404.status.render.platform.GithubLanguagesRenderOptions
-import top.e404.status.render.platform.GithubRankCalculator
-import top.e404.status.render.platform.GithubRepoRenderOptions
-import top.e404.status.render.platform.GithubStatsRenderOptions
+import top.e404.statimg.fetcher.GithubLanguageStat
+import top.e404.statimg.fetcher.GithubRepoCardData
+import top.e404.statimg.fetcher.GithubStats
+import top.e404.statimg.platform.GithubCardRender
+import top.e404.statimg.platform.GithubLanguagesRenderOptions
+import top.e404.statimg.platform.GithubRankCalculator
+import top.e404.statimg.platform.GithubRepoRenderOptions
+import top.e404.statimg.platform.GithubStatsRenderOptions
 import top.e404.tavolo.util.bytes
 import java.io.File
 import kotlin.test.Test
@@ -207,8 +207,8 @@ class ManualTestGithubCardRender {
     )
 
     private fun repoFixture() = GithubRepoCardData(
-        name = "github-readme-stats-render",
-        nameWithOwner = "4o4E/github-readme-stats-render",
+        name = "statimg",
+        nameWithOwner = "4o4E/statimg",
         description = "Offline PNG renderer for GitHub readme stats cards, language charts, repository cards, and contribution heatmaps.",
         primaryLanguageName = "Kotlin",
         primaryLanguageColor = "#A97BFF",

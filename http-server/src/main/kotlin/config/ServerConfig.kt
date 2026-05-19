@@ -1,4 +1,4 @@
-package top.e404.status.render.config
+package top.e404.statimg.config
 
 import com.charleskorn.kaml.PolymorphismStyle
 import com.charleskorn.kaml.Yaml
@@ -8,9 +8,9 @@ import io.ktor.client.engine.okhttp.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
-import top.e404.status.render.*
-import top.e404.status.render.feature.Heatmap2dRender
-import top.e404.status.render.feature.Heatmap3dRender
+import top.e404.statimg.*
+import top.e404.statimg.feature.Heatmap2dRender
+import top.e404.statimg.feature.Heatmap3dRender
 import java.io.File
 
 @Serializable
@@ -28,14 +28,7 @@ data class ServerConfig(
 ): IConfig {
     override val client by lazy {
         HttpClient(OkHttp) {
-            engine {
-                config {
-                    followRedirects(true)
-                }
-                proxyConfig?.let {
-                    proxy = it.toProxy()
-                }
-            }
+            statimgHttpClientDefaults(proxyConfig)
         }
     }
 

@@ -1,9 +1,9 @@
-package top.e404.status.render.client
+package top.e404.statimg.client
 
 import io.ktor.http.Url
 import java.time.LocalDate
 
-data class StatusRenderServer(
+data class StatimgServer(
     val baseUrl: String,
 ) {
     constructor(baseUrl: Url) : this(baseUrl.toString())

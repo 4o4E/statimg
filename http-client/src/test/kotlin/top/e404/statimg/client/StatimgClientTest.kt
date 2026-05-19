@@ -1,4 +1,4 @@
-package top.e404.status.render.client
+package top.e404.statimg.client
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.ClientEngineClosedException
@@ -18,7 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-class GithubReadmeStatsRenderClientTest {
+class StatimgClientTest {
     @Test
     fun `github stats builds typed query`() = runBlocking {
         var requestedUrl = ""
@@ -138,11 +138,11 @@ class GithubReadmeStatsRenderClientTest {
                 }
             }
         }
-        val client = GithubReadmeStatsRenderClient(Url("http://render.test/api"), httpClient)
+        val client = StatimgClient(Url("http://render.test/api"), httpClient)
 
-        client.githubRepo("4o4E", "github-readme-stats-render")
+        client.githubRepo("4o4E", "statimg")
 
-        assertEquals("http://render.test/api/github/repo/4o4E/github-readme-stats-render", requestedUrl)
+        assertEquals("http://render.test/api/github/repo/4o4E/statimg", requestedUrl)
     }
 
     @Test
@@ -151,7 +151,7 @@ class GithubReadmeStatsRenderClientTest {
             respond("bad request", status = HttpStatusCode.BadRequest)
         }
 
-        val error = assertFailsWith<StatusRenderHttpException> {
+        val error = assertFailsWith<StatimgHttpException> {
             client.githubStats("bad")
         }
 
@@ -161,7 +161,7 @@ class GithubReadmeStatsRenderClientTest {
 
     @Test
     fun `close closes owned default http client`() = runBlocking {
-        val client = GithubReadmeStatsRenderClient("http://render.test/api")
+        val client = StatimgClient("http://render.test/api")
 
         client.close()
 
@@ -179,7 +179,7 @@ class GithubReadmeStatsRenderClientTest {
                 }
             }
         }
-        val client = GithubReadmeStatsRenderClient("http://render.test/api", httpClient)
+        val client = StatimgClient("http://render.test/api", httpClient)
 
         client.close()
 
@@ -187,13 +187,13 @@ class GithubReadmeStatsRenderClientTest {
         httpClient.close()
     }
 
-    private fun testClient(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): GithubReadmeStatsRenderClient {
+    private fun testClient(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): StatimgClient {
         val httpClient = HttpClient(MockEngine) {
             engine {
                 addHandler(handler)
             }
         }
-        return GithubReadmeStatsRenderClient("http://render.test/api", httpClient)
+        return StatimgClient("http://render.test/api", httpClient)
     }
 
     private fun MockRequestHandleScope.respondPng(): HttpResponseData =

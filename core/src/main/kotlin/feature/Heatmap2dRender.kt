@@ -1,14 +1,14 @@
-package top.e404.status.render.feature
+package top.e404.statimg.feature
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.Image
-import top.e404.status.render.FontFileResolver
+import top.e404.statimg.FontFileResolver
 import top.e404.tavolo.draw.compose.*
 import top.e404.tavolo.util.FontManager
 import top.e404.tavolo.util.argb
-import top.e404.status.render.ColorSerializer
+import top.e404.statimg.ColorSerializer
 import java.time.LocalDate
 
 object Heatmap2dRender {
