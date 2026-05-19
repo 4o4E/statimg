@@ -53,28 +53,6 @@ jobs:
             --parallel \
             --build-cache
 
-      - name: Remove stale Nexus artifacts
-        if: ${{ !endsWith(env.RELEASE_TAG, '-SNAPSHOT') }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-        run: |
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "GitHub release $RELEASE_TAG already exists, skip Nexus cleanup"
-            exit 0
-          fi
-
-          NEXUS_BASE_URL="https://nexus.e404.top:3443"
-          for artifact in statimg-core statimg-http-client; do
-            search_url="${NEXUS_BASE_URL}/service/rest/v1/search?repository=maven-releases&group=top.e404.statimg&name=${artifact}&version=${RELEASE_TAG}"
-            ids="$(curl -fsS -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" "$search_url" | jq -r '.items[].id')"
-            for id in $ids; do
-              echo "Deleting stale Nexus component ${artifact}:${RELEASE_TAG} (${id})"
-              curl -fsS -X DELETE -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" "${NEXUS_BASE_URL}/service/rest/v1/components/${id}"
-            done
-          done
-
       - name: Publish Maven packages
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.CENTRAL_USERNAME }}
@@ -90,10 +68,16 @@ jobs:
             exit 1
           fi
 
-          ./gradlew \
-            :core:publishAllPublicationsToNexusRepository \
-            :http-client:publishAllPublicationsToNexusRepository \
-            --build-cache
+          if [[ "$VERSION" != *-SNAPSHOT ]] \
+            && curl -fsI "https://nexus.e404.top:3443/repository/maven-releases/top/e404/statimg/statimg-core/${VERSION}/statimg-core-${VERSION}.pom" >/dev/null \
+            && curl -fsI "https://nexus.e404.top:3443/repository/maven-releases/top/e404/statimg/statimg-http-client/${VERSION}/statimg-http-client-${VERSION}.pom" >/dev/null; then
+            echo "Nexus release artifacts already exist, skip Nexus publish"
+          else
+            ./gradlew \
+              :core:publishAllPublicationsToNexusRepository \
+              :http-client:publishAllPublicationsToNexusRepository \
+              --build-cache
+          fi
 
           if [[ "$VERSION" == *-SNAPSHOT ]]; then
             echo "Snapshot version only publishes to Nexus"
