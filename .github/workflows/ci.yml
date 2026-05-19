@@ -33,4 +33,4 @@ jobs:
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/install_manual.sh)"
 
       - name: Run tests
-        run: ./gradlew :core:test :http-server:test --parallel --build-cache
+        run: ./gradlew :core:test :http-client:test :http-server:test --parallel --build-cache

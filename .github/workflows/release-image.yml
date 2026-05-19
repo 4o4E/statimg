@@ -3,10 +3,7 @@ name: Release Image
 on:
   push:
     tags:
-      - "*"
-  release:
-    types:
-      - published
+      - "[0-9]*"
 
 permissions:
   contents: write
@@ -40,12 +37,48 @@ jobs:
         run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/install_manual.sh)"
 
       - name: Test and build Linux fat jar
-        run: ./gradlew :core:test :http-server:test :http-server-linux:shadowJar --parallel --build-cache
+        run: |
+          ./gradlew \
+            :core:check \
+            :http-client:check \
+            :http-server:check \
+            :core:checkPomFileForMavenPublication \
+            :http-client:checkPomFileForMavenPublication \
+            :http-server-linux:shadowJar \
+            --parallel \
+            --build-cache
 
-      - name: Publish core to GitHub Packages
+      - name: Publish Maven packages
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew :core:publish -Pversion="${RELEASE_TAG#v}" --build-cache
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          VERSION="${RELEASE_TAG}"
+          if [[ "$VERSION" == v* ]]; then
+            echo "Release tag must not use v prefix: $VERSION" >&2
+            exit 1
+          fi
+
+          ./gradlew \
+            :core:publishAllPublicationsToNexusRepository \
+            :http-client:publishAllPublicationsToNexusRepository \
+            --build-cache
+
+          if [[ "$VERSION" == *-SNAPSHOT ]]; then
+            ./gradlew \
+              :core:publishToMavenCentral \
+              :http-client:publishToMavenCentral \
+              --build-cache
+          else
+            ./gradlew \
+              :core:publishAndReleaseToMavenCentral \
+              :http-client:publishAndReleaseToMavenCentral \
+              --build-cache
+          fi
 
       - name: Prepare release asset
         run: |
