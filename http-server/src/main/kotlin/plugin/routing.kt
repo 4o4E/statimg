@@ -14,7 +14,6 @@ import top.e404.statimg.platform.GithubRepoRenderOptions
 import top.e404.statimg.platform.GithubRender
 import top.e404.statimg.platform.GithubStatsRenderOptions
 import top.e404.statimg.platform.WakatimePublicDataUnavailable
-import top.e404.statimg.platform.WakatimePublicRangeMismatch
 import top.e404.statimg.platform.WakatimeUserNotFound
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -29,29 +28,22 @@ fun Application.routing(wakatimeRender: WakatimeRender, githubRender: GithubRend
         call.respondText(Json.encodeToString(ServerConfig.config.themes2d.keys), ContentType.Application.Json)
     }
 
-    get("/wakatime/{type}/{username}/{range}") {
+    get("/wakatime/{type}/{username}") {
         val username = call.parameters["username"]!!
-        val range = WakatimeRender.FetchRange.byName(call.parameters["range"]!!)
-        if (range == null) {
-            call.respond(HttpStatusCode.BadRequest, "invalid range")
-            return@get
-        }
         val theme = call.request.queryParameters["theme"]?.let { ServerConfig.config.themes2d[it] } ?: Heatmap2dRender.Theme.default
         try {
             when (val type = call.parameters["type"]!!.lowercase()) {
                 "lang" -> {
                     val allLang = call.request.queryParameters["all"]?.toBoolean() == true
-                    call.respondBytes(wakatimeRender.renderLang(username, range, allLang, theme), ContentType.Image.PNG)
+                    call.respondBytes(wakatimeRender.renderLang(username, allLang, theme), ContentType.Image.PNG)
                 }
 
-                "editor" -> call.respondBytes(wakatimeRender.renderEditor(username, range, theme), ContentType.Image.PNG)
+                "editor" -> call.respondBytes(wakatimeRender.renderEditor(username, theme), ContentType.Image.PNG)
 
                 else -> call.respondText("unknown request type: $type", ContentType.Text.Plain, HttpStatusCode.BadRequest)
             }
         } catch (_: WakatimePublicDataUnavailable) {
             call.respondText("wakatime_public_data_unavailable", status = HttpStatusCode.Forbidden)
-        } catch (_: WakatimePublicRangeMismatch) {
-            call.respondText("wakatime_public_range_mismatch", status = HttpStatusCode.BadRequest)
         } catch (_: WakatimeUserNotFound) {
             call.respondText("wakatime_user_not_found", status = HttpStatusCode.NotFound)
         } catch (e: Exception) {

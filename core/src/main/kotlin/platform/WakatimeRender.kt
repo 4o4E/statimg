@@ -12,7 +12,6 @@ import top.e404.statimg.feature.Heatmap2dRender
 import kotlin.math.max
 
 class WakatimePublicDataUnavailable : RuntimeException()
-class WakatimePublicRangeMismatch : RuntimeException()
 class WakatimeUserNotFound : RuntimeException()
 
 class WakatimeRender(val config: IConfig) {
@@ -44,8 +43,8 @@ class WakatimeRender(val config: IConfig) {
         fontFamily = layout.textFontFamily
     )
 
-    suspend fun renderLang(user: String, range: FetchRange, allLang: Boolean, theme: Heatmap2dRender.Theme): ByteArray {
-        val stats = fetchUserStats(user, range)
+    suspend fun renderLang(user: String, allLang: Boolean, theme: Heatmap2dRender.Theme): ByteArray {
+        val stats = fetchUserStats(user)
         if (stats["is_language_usage_visible"]?.jsonPrimitive?.boolean == false || stats["languages"] == null) {
             throw WakatimePublicDataUnavailable()
         }
@@ -56,11 +55,11 @@ class WakatimeRender(val config: IConfig) {
             else statsList.filter { it.duration != "0 secs" }
         }
 
-        return renderStats("$user's wakatime stats in ${range.display}", statsList, theme)
+        return renderStats("$user's wakatime stats ${stats["human_readable_range"]!!.jsonPrimitive.content}", statsList, theme)
     }
 
-    suspend fun renderEditor(user: String, range: FetchRange, theme: Heatmap2dRender.Theme): ByteArray {
-        val stats = fetchUserStats(user, range)
+    suspend fun renderEditor(user: String, theme: Heatmap2dRender.Theme): ByteArray {
+        val stats = fetchUserStats(user)
         if (stats["is_editor_usage_visible"]?.jsonPrimitive?.boolean == false || stats["editors"] == null) {
             throw WakatimePublicDataUnavailable()
         }
@@ -68,7 +67,7 @@ class WakatimeRender(val config: IConfig) {
             StatsItem(it as JsonObject)
         }
 
-        return renderStats("$user's editor usage stats in ${range.display}", statsList, theme)
+        return renderStats("$user's editor usage stats ${stats["human_readable_range"]!!.jsonPrimitive.content}", statsList, theme)
     }
 
     private fun renderStats(title: String, statsList: List<StatsItem>, theme: Heatmap2dRender.Theme) = render {
@@ -149,17 +148,14 @@ class WakatimeRender(val config: IConfig) {
         )
     }
 
-    private suspend fun fetchUserStats(user: String, range: FetchRange, retryCount: Int = 0): JsonObject {
-        val response = client.get("https://wakatime.com/api/v1/users/${user}/stats/${range.path}") {
-            parameter("is_including_today", true)
-        }
+    private suspend fun fetchUserStats(user: String, retryCount: Int = 0): JsonObject {
+        val response = client.get("https://wakatime.com/api/v1/users/${user}/stats")
         if (response.status == HttpStatusCode.NotFound) throw WakatimeUserNotFound()
         if (response.status == HttpStatusCode.Forbidden || response.status == HttpStatusCode.Unauthorized) {
             throw WakatimePublicDataUnavailable()
         }
         val jo = response.bodyAsText().let { Json.parseToJsonElement(it).jsonObject }
         val error = jo["error"]?.jsonPrimitive?.content
-        if (error == "Time range not matching user's public stats range.") throw WakatimePublicRangeMismatch()
         if (error != null) error("WakaTime: $error")
         if (!response.status.isSuccess() && response.status != HttpStatusCode.Accepted) {
             error("WakaTime HTTP ${response.status.value}")
@@ -169,23 +165,9 @@ class WakatimeRender(val config: IConfig) {
         if (jo["message"]?.jsonPrimitive?.content?.contains("Calculating") == true && retryCount < CALCULATING_RETRY_LIMIT) {
             // Wakatime 可能先返回计算中状态，短暂等待后再拉取完整数据。
             delay(CALCULATING_RETRY_DELAY_MILLIS)
-            return fetchUserStats(user, range, retryCount + 1)
+            return fetchUserStats(user, retryCount + 1)
         }
         error("wakatime response missing data: ${jo["message"]?.jsonPrimitive?.content ?: "unknown message"}")
     }
 
-    @Suppress("UNUSED")
-    enum class FetchRange(val path: String, val display: String, regex: String) {
-        LAST_7_DAYS("last_7_days", "last 7 days", "(?i)7d"),
-        LAST_30_DAYS("last_30_days", "last 30 days", "(?i)30d"),
-        LAST_6_MONTHS("last_6_months", "last 6 months", "(?i)6m"),
-        LAST_YEAR("last_year", "last year", "(?i)year|1?y"),
-        ALL_TIME("all_time", "all time", "(?i)all|a");
-
-        val regex = Regex(regex)
-
-        companion object {
-            fun byName(name: String) = entries.firstOrNull { it.regex.matches(name) }
-        }
-    }
 }

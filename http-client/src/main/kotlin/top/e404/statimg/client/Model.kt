@@ -9,19 +9,9 @@ data class StatimgServer(
     constructor(baseUrl: Url) : this(baseUrl.toString())
 }
 
-data class WakatimeRange(val path: String) {
-    companion object {
-        val LAST_7_DAYS: WakatimeRange = WakatimeRange("7d")
-        val LAST_30_DAYS: WakatimeRange = WakatimeRange("30d")
-        val LAST_6_MONTHS: WakatimeRange = WakatimeRange("6m")
-        val LAST_YEAR: WakatimeRange = WakatimeRange("year")
-        val ALL_TIME: WakatimeRange = WakatimeRange("all")
-    }
-}
 
 data class WakatimeLanguageRequest(
     val username: String,
-    val range: WakatimeRange,
     val theme: String? = null,
     val allLanguages: Boolean? = null,
     val extraQueryParameters: Map<String, String> = emptyMap(),
@@ -36,7 +26,6 @@ data class WakatimeLanguageRequest(
 
 data class WakatimeEditorRequest(
     val username: String,
-    val range: WakatimeRange,
     val theme: String? = null,
     val extraQueryParameters: Map<String, String> = emptyMap(),
 ) {

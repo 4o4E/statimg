@@ -37,30 +37,28 @@ class StatimgClient private constructor(
 
     suspend fun wakatimeLanguage(request: WakatimeLanguageRequest): ByteArray =
         getBytes(
-            pathSegments = listOf("wakatime", "lang", request.username, request.range.path),
+            pathSegments = listOf("wakatime", "lang", request.username),
             queryParameters = request.toQueryParameters()
         )
 
     suspend fun wakatimeLanguage(
         username: String,
-        range: WakatimeRange,
         theme: String? = null,
         allLanguages: Boolean? = null,
     ): ByteArray =
-        wakatimeLanguage(WakatimeLanguageRequest(username, range, theme, allLanguages))
+        wakatimeLanguage(WakatimeLanguageRequest(username, theme, allLanguages))
 
     suspend fun wakatimeEditor(request: WakatimeEditorRequest): ByteArray =
         getBytes(
-            pathSegments = listOf("wakatime", "editor", request.username, request.range.path),
+            pathSegments = listOf("wakatime", "editor", request.username),
             queryParameters = request.toQueryParameters()
         )
 
     suspend fun wakatimeEditor(
         username: String,
-        range: WakatimeRange,
         theme: String? = null,
     ): ByteArray =
-        wakatimeEditor(WakatimeEditorRequest(username, range, theme))
+        wakatimeEditor(WakatimeEditorRequest(username, theme))
 
     suspend fun githubContribution(request: GithubContributionRequest): ByteArray =
         getBytes(

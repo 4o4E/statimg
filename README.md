@@ -34,16 +34,15 @@ GET http://localhost:2345/wakatime/themes
 
 #### 获取wakatime 语言使用渲染图
 
-url: `/wakatime/lang/{user}/{range}`
+url: `/wakatime/lang/{user}`
 
 | url参数 | 含义          | 示例                            |
 |-------|-------------|-------------------------------|
 | user  | wakatime用户名 | `404E`                        |
-| range | 时间范围        | `7d`/`30d`/`6m`/`30d`/`y`/`y` |
 
-WakaTime 统计使用匿名公开接口，不需要配置 WakaTime 密钥。统计项目和时间范围取决于目标账户的公开设置；未公开时长时显示百分比。
+WakaTime 统计使用匿名公开接口，不需要配置 WakaTime 密钥，时间范围由目标账户的公开设置决定。未公开时长时显示百分比。
 
-接口返回 `403 wakatime_public_data_unavailable` 表示所需统计项目未公开，`400 wakatime_public_range_mismatch` 表示请求范围与公开范围不一致，`404 wakatime_user_not_found` 表示找不到用户；其他错误不得解释为公开设置问题。
+接口返回 `403 wakatime_public_data_unavailable` 表示所需统计项目未公开，`404 wakatime_user_not_found` 表示找不到用户。
 
 **可用参数**
 
@@ -55,17 +54,16 @@ WakaTime 统计使用匿名公开接口，不需要配置 WakaTime 密钥。统�
 **示例请求**
 
 ```http request
-GET http://localhost:2345/wakatime/lang/404E/7d?theme=dark
+GET http://localhost:2345/wakatime/lang/404E?theme=dark
 ```
 
 #### 获取wakatime 编辑器使用渲染图
 
-url: `/wakatime/editor/{user}/{range}`
+url: `/wakatime/editor/{user}`
 
 | url参数 | 含义          | 示例                            |
 |-------|-------------|-------------------------------|
 | user  | wakatime用户名 | `404E`                        |
-| range | 时间范围        | `7d`/`30d`/`6m`/`30d`/`y`/`y` |
 
 **可用参数**
 
@@ -76,5 +74,5 @@ url: `/wakatime/editor/{user}/{range}`
 **示例请求**
 
 ```http request
-GET http://localhost:2345/wakatime/editor/404E/7d?theme=dark
+GET http://localhost:2345/wakatime/editor/404E?theme=dark
 ```

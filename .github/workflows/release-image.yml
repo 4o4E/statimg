@@ -136,5 +136,5 @@ jobs:
             -e GITHUB_TOKEN=unused "${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}"
           trap 'docker logs statimg-release-check; docker rm -f statimg-release-check' EXIT
           for attempt in {1..30}; do curl -fsS http://127.0.0.1:23451/wakatime/themes >/dev/null && break; sleep 1; done
-          curl -fsS --max-time 120 http://127.0.0.1:23451/wakatime/editor/404E/all -o /tmp/statimg-release-check.png
+          curl -fsS --max-time 120 http://127.0.0.1:23451/wakatime/editor/404E -o /tmp/statimg-release-check.png
           file /tmp/statimg-release-check.png | grep -q 'PNG image data'

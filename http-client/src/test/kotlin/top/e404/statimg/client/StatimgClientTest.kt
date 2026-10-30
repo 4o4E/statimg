@@ -95,24 +95,20 @@ class StatimgClientTest {
     }
 
     @Test
-    fun `wakatime and contribution endpoints build paths`() = runBlocking {
+    fun `contribution endpoints build paths`() = runBlocking {
         val requestedUrls = mutableListOf<String>()
         val client = testClient { request ->
             requestedUrls += request.url.toString()
             respondPng()
         }
 
-        client.wakatimeLanguage("404E", WakatimeRange.LAST_7_DAYS, theme = "dark", allLanguages = true)
-        client.wakatimeEditor("404E", WakatimeRange.LAST_30_DAYS, theme = "vue")
         client.githubContribution("octocat", LocalDate.of(2026, 5, 17), theme = "dark")
         client.githubContribution3d("octocat", theme = "rainbow")
         client.githubRepo("octocat", "Hello-World", theme = "dark")
 
-        assertEquals("http://render.test/api/wakatime/lang/404E/7d?theme=dark&all=true", requestedUrls[0])
-        assertEquals("http://render.test/api/wakatime/editor/404E/30d?theme=vue", requestedUrls[1])
-        assertEquals("http://render.test/api/github/contribution/octocat/2026-05-17?theme=dark", requestedUrls[2])
-        assertEquals("http://render.test/api/github/contribution3d/octocat?theme=rainbow", requestedUrls[3])
-        assertEquals("http://render.test/api/github/repo/octocat/Hello-World?theme=dark", requestedUrls[4])
+        assertEquals("http://render.test/api/github/contribution/octocat/2026-05-17?theme=dark", requestedUrls[0])
+        assertEquals("http://render.test/api/github/contribution3d/octocat?theme=rainbow", requestedUrls[1])
+        assertEquals("http://render.test/api/github/repo/octocat/Hello-World?theme=dark", requestedUrls[2])
     }
 
     @Test
