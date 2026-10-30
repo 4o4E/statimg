@@ -18,7 +18,6 @@ data class ServerConfig(
     val host: String = "localhost",
     val port: Int = 2345,
     @SerialName("proxy") override val proxyConfig: ProxyConfig? = null,
-    @SerialName("waka_token") override val wakaToken: String,
     @SerialName("github_token") override val githubToken: String,
     override val layout2d: Heatmap2dRender.Layout,
     override val themes2d: Map<String, Heatmap2dRender.Theme>,

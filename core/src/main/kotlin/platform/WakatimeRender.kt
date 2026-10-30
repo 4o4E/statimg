@@ -11,6 +11,10 @@ import top.e404.statimg.IConfig
 import top.e404.statimg.feature.Heatmap2dRender
 import kotlin.math.max
 
+class WakatimePublicDataUnavailable : RuntimeException()
+class WakatimePublicRangeMismatch : RuntimeException()
+class WakatimeUserNotFound : RuntimeException()
+
 class WakatimeRender(val config: IConfig) {
     private companion object {
         const val CALCULATING_RETRY_LIMIT = 6
@@ -42,6 +46,9 @@ class WakatimeRender(val config: IConfig) {
 
     suspend fun renderLang(user: String, range: FetchRange, allLang: Boolean, theme: Heatmap2dRender.Theme): ByteArray {
         val stats = fetchUserStats(user, range)
+        if (stats["is_language_usage_visible"]?.jsonPrimitive?.boolean == false || stats["languages"] == null) {
+            throw WakatimePublicDataUnavailable()
+        }
         val statsList = stats["languages"]!!.jsonArray.map {
             StatsItem(it as JsonObject)
         }.let { statsList ->
@@ -54,6 +61,9 @@ class WakatimeRender(val config: IConfig) {
 
     suspend fun renderEditor(user: String, range: FetchRange, theme: Heatmap2dRender.Theme): ByteArray {
         val stats = fetchUserStats(user, range)
+        if (stats["is_editor_usage_visible"]?.jsonPrimitive?.boolean == false || stats["editors"] == null) {
+            throw WakatimePublicDataUnavailable()
+        }
         val statsList = stats["editors"]!!.jsonArray.map {
             StatsItem(it as JsonObject)
         }
@@ -135,19 +145,25 @@ class WakatimeRender(val config: IConfig) {
         constructor(jo: JsonObject) : this(
             name = jo["name"]!!.jsonPrimitive.content,
             percent = jo["percent"]!!.jsonPrimitive.float,
-            duration = jo["text"]!!.jsonPrimitive.content
+            duration = jo["text"]?.jsonPrimitive?.content ?: "${jo["percent"]!!.jsonPrimitive.content}%"
         )
     }
 
     private suspend fun fetchUserStats(user: String, range: FetchRange, retryCount: Int = 0): JsonObject {
         val response = client.get("https://wakatime.com/api/v1/users/${user}/stats/${range.path}") {
             parameter("is_including_today", true)
-            parameter("api_key", config.wakaToken)
         }
-        if (response.status == HttpStatusCode.NotFound) error("unknown wakatime user, please register at wakatime.com")
+        if (response.status == HttpStatusCode.NotFound) throw WakatimeUserNotFound()
+        if (response.status == HttpStatusCode.Forbidden || response.status == HttpStatusCode.Unauthorized) {
+            throw WakatimePublicDataUnavailable()
+        }
         val jo = response.bodyAsText().let { Json.parseToJsonElement(it).jsonObject }
         val error = jo["error"]?.jsonPrimitive?.content
-        if (error != null) throw Exception("unknown error $error")
+        if (error == "Time range not matching user's public stats range.") throw WakatimePublicRangeMismatch()
+        if (error != null) error("WakaTime: $error")
+        if (!response.status.isSuccess() && response.status != HttpStatusCode.Accepted) {
+            error("WakaTime HTTP ${response.status.value}")
+        }
 
         jo["data"]?.jsonObject?.let { return it }
         if (jo["message"]?.jsonPrimitive?.content?.contains("Calculating") == true && retryCount < CALCULATING_RETRY_LIMIT) {

@@ -7,8 +7,6 @@ proxy:
   type: socks # socks/http
   host: localhost
   port: 7890
-# wakatime token, 在 https://wakatime.com/settings/account 获取
-waka_token: waka_xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 # github token, 在 https://github.com/settings/tokens 获取
 github_token: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # 布局设置, 使用到的字体请自行放入对应的文件夹, JetBrainsMono可在 https://www.jetbrains.com/lp/mono/ 下载

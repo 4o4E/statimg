@@ -17,7 +17,6 @@ private const val SOCKET_TIMEOUT_MILLIS = 90_000L
 
 interface IConfig {
     val proxyConfig: ProxyConfig?
-    val wakaToken: String
     val githubToken: String
     val layout2d: Heatmap2dRender.Layout
     val themes2d: Map<String, Heatmap2dRender.Theme>
@@ -54,8 +53,6 @@ open class Config : IConfig {
     @SerialName("proxy")
     override val proxyConfig: ProxyConfig? = null
 
-    @SerialName("waka_token")
-    override val wakaToken: String = "waka_xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     @SerialName("github_token")
     override val githubToken: String = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     override val layout2d: Heatmap2dRender.Layout = Heatmap2dRender.Layout()

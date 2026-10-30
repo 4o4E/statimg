@@ -1,4 +1,4 @@
-FROM openjdk:11.0.11-jre-slim AS jre_source
+FROM eclipse-temurin:17-jre-jammy AS jre_source
 # ubuntu 作为基础镜像。
 FROM ubuntu:24.04
 
@@ -16,7 +16,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache
 
-ENV JAVA_HOME=/usr/local/openjdk-11
+ENV JAVA_HOME=/opt/java/openjdk
 ENV LANG="en_US.UTF-8" \
     LANGUAGE="en_US.UTF-8" \
     LC_ALL="C" \

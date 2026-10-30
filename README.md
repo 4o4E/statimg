@@ -10,7 +10,7 @@
 
 ### 使用
 
-1. 安装11或更高版本的[java](https://adoptium.net/)
+1. 安装17或更高版本的[java](https://adoptium.net/)
 2. 从[release](https://github.com/4o4E/statimg/releases/latest)下载对应操作系统的jar文件
 3. 在控制台中使用`java -jar http-server-${plateform}.jar`启动服务
 
@@ -40,6 +40,10 @@ url: `/wakatime/lang/{user}/{range}`
 |-------|-------------|-------------------------------|
 | user  | wakatime用户名 | `404E`                        |
 | range | 时间范围        | `7d`/`30d`/`6m`/`30d`/`y`/`y` |
+
+WakaTime 统计使用匿名公开接口，不需要配置 WakaTime 密钥。统计项目和时间范围取决于目标账户的公开设置；未公开时长时显示百分比。
+
+接口返回 `403 wakatime_public_data_unavailable` 表示所需统计项目未公开，`400 wakatime_public_range_mismatch` 表示请求范围与公开范围不一致，`404 wakatime_user_not_found` 表示找不到用户；其他错误不得解释为公开设置问题。
 
 **可用参数**
 

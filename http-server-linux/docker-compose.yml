@@ -1,7 +1,7 @@
 services:
   statimg:
     container_name: statimg
-    image: 404e/statimg:2.1.0
+    image: ghcr.io/4o4e/statimg:latest
     env_file:
       - .env
     volumes:

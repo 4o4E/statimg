@@ -13,6 +13,9 @@ import top.e404.statimg.platform.GithubLanguagesRenderOptions
 import top.e404.statimg.platform.GithubRepoRenderOptions
 import top.e404.statimg.platform.GithubRender
 import top.e404.statimg.platform.GithubStatsRenderOptions
+import top.e404.statimg.platform.WakatimePublicDataUnavailable
+import top.e404.statimg.platform.WakatimePublicRangeMismatch
+import top.e404.statimg.platform.WakatimeUserNotFound
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -45,8 +48,14 @@ fun Application.routing(wakatimeRender: WakatimeRender, githubRender: GithubRend
 
                 else -> call.respondText("unknown request type: $type", ContentType.Text.Plain, HttpStatusCode.BadRequest)
             }
+        } catch (_: WakatimePublicDataUnavailable) {
+            call.respondText("wakatime_public_data_unavailable", status = HttpStatusCode.Forbidden)
+        } catch (_: WakatimePublicRangeMismatch) {
+            call.respondText("wakatime_public_range_mismatch", status = HttpStatusCode.BadRequest)
+        } catch (_: WakatimeUserNotFound) {
+            call.respondText("wakatime_user_not_found", status = HttpStatusCode.NotFound)
         } catch (e: Exception) {
-            call.respondText(e.message ?: "", ContentType.Text.Plain, HttpStatusCode.BadRequest)
+            call.respondText(e.message ?: "", ContentType.Text.Plain, HttpStatusCode.InternalServerError)
         }
     }
 

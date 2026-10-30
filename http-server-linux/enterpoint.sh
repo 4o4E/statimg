@@ -9,7 +9,6 @@ sed -i s/{SERVER_PORT}/$SERVER_PORT/ config.yml
 sed -i s/{PROXY_TYPE}/$PROXY_TYPE/ config.yml
 sed -i s/{PROXY_HOST}/$PROXY_HOST/ config.yml
 sed -i s/{PROXY_PORT}/$PROXY_PORT/ config.yml
-sed -i s/{WAKA_TOKEN}/$WAKA_TOKEN/ config.yml
 sed -i s/{GITHUB_TOKEN}/$GITHUB_TOKEN/ config.yml
 
 if [ ! -n "$START_CMD" ]; then
