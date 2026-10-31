@@ -3,8 +3,15 @@ package top.e404.statimg.test
 import org.junit.jupiter.api.Test
 import top.e404.statimg.feature.Heatmap2dRender
 import top.e404.statimg.feature.Heatmap3dRender
+import kotlin.test.assertEquals
 
 class TestHeatmapRender {
+    @Test
+    fun zeroActivityUsesBackgroundIntensityWithoutDividingByZero() {
+        val theme = Heatmap2dRender.Theme(bgColor = 0xff132435.toInt())
+        assertEquals(0xff132435.toInt(), Heatmap2dRender.intensityColor(0, 0, theme))
+    }
+
     @Test
     fun testRender2dHeatmapWithFixedLocalData() {
         val image = Heatmap2dRender.renderCommit(

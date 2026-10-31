@@ -39,7 +39,13 @@ class WakatimeRender(val config: IConfig) {
     )
 
     suspend fun renderStats(user: String, theme: Heatmap2dRender.Theme): ByteArray {
-        val stats = fetchUserStats(user)
+        // 日历与分类统计分别公开；任意一项可见都可以生成综合图片。
+        val stats = try {
+            fetchUserStats(user)
+        } catch (_: WakatimePublicDataUnavailable) {
+            null
+        }
+        val activity = fetchWakatimeActivity(client, user)
         val definitions = listOf(
             StatsSection("LANG", "Languages", "is_language_usage_visible", "languages"),
             StatsSection("IDE", "Editors", "is_editor_usage_visible", "editors"),
@@ -48,7 +54,7 @@ class WakatimeRender(val config: IConfig) {
             StatsSection("AI", "AI Models", "is_ai_model_usage_visible", "ai_models")
         )
         val sections = definitions.mapNotNull { section ->
-            if (stats[section.visibilityKey]?.jsonPrimitive?.boolean != true) return@mapNotNull null
+            if (stats?.get(section.visibilityKey)?.jsonPrimitive?.boolean != true) return@mapNotNull null
             val values = (stats[section.dataKey] as? JsonArray)?.map { item ->
                 val value = item.jsonObject
                 val name = value.getValue("name").jsonPrimitive.content
@@ -57,15 +63,15 @@ class WakatimeRender(val config: IConfig) {
             }.orEmpty().sortedByDescending { it.percent }
             if (values.isEmpty()) null else section to values
         }
-        if (sections.isEmpty()) throw WakatimePublicDataUnavailable()
-        val range = stats.getValue("human_readable_range").jsonPrimitive.content
+        if (sections.isEmpty() && activity == null) throw WakatimePublicDataUnavailable()
+        val range = if (stats != null) stats.getValue("human_readable_range").jsonPrimitive.content else checkNotNull(activity).range
         val title = "WakaTime · $user · $range"
-        val durationsVisible = stats["is_coding_activity_visible"]?.jsonPrimitive?.boolean == true
+        val durationsVisible = stats?.get("is_coding_activity_visible")?.jsonPrimitive?.boolean == true
         val total = stats.takeIf { durationsVisible }
             ?.get("human_readable_total_including_other_language")?.jsonPrimitive?.contentOrNull
         val daily = stats.takeIf { durationsVisible }
             ?.get("human_readable_daily_average_including_other_language")?.jsonPrimitive?.contentOrNull
-        return renderDashboard(title, total, daily, sections, theme)
+        return renderDashboard(title, total, daily, sections, activity, theme)
     }
 
     private fun renderDashboard(
@@ -73,6 +79,7 @@ class WakatimeRender(val config: IConfig) {
         total: String?,
         daily: String?,
         sections: List<Pair<StatsSection, List<StatsValue>>>,
+        activity: WakatimeActivity?,
         theme: Heatmap2dRender.Theme
     ): ByteArray {
         val colors = listOf(0xff7aa2f7.toInt(), 0xffbb9af7.toInt(), 0xff2ac3b3.toInt(), 0xffff9e64.toInt(), 0xfff7768e.toInt(), 0xff565f89.toInt())
@@ -92,11 +99,11 @@ class WakatimeRender(val config: IConfig) {
         val labelStyle = TextModifier.font(fontSize = layout.langSize, textColor = theme.titleColor, fontFamily = layout.langFontFamily)
         val bodyStyle = bodyTextStyle(theme)
         val (legendWidth, durationWidth) = Font(FontManager.resolve(layout.textFontFamily), layout.textSize).use { font ->
-            val longestLegend = sections.maxOf { (_, values) ->
+            val longestLegend = sections.maxOfOrNull { (_, values) ->
                 val shownWidth = values.take(5).maxOf { font.measureTextWidth("${it.name}  ${it.percentageLabel}") }
                 val remainder = values.drop(5).sumOf { it.percent.toDouble() }.toFloat()
                 max(shownWidth, if (remainder > 0f) font.measureTextWidth("Others  ${percentage(remainder)}") else 0f)
-            }
+            } ?: 0f
             val longestDuration = max(
                 total?.let { font.measureTextWidth("Total: $it") } ?: 0f,
                 daily?.let { font.measureTextWidth("Daily: $it") } ?: 0f
@@ -111,27 +118,58 @@ class WakatimeRender(val config: IConfig) {
         val headerWidth = Font(FontManager.resolve(layout.titleFontFamily), layout.titleSize).use { font ->
             max(font.measureTextWidth(title), durationWidth)
         }
-        val outerWidth = max(dashboardWidth + layout.margin * 2, headerWidth + layout.margin * 2)
+        val frameShape = Shape.RoundedRect(12f)
+        // 外框的 1px 占位计入尺寸，使内部细边框落在整数像素边界，而非分散到相邻两行或两列。
+        val outerWidth = max(dashboardWidth, headerWidth) + (layout.margin + 1f) * 2
 
         return render {
             column(
                 Modifier.width(outerWidth)
-                    .clip(Shape.RoundedRect(12f)).background(theme.bgColor)
-                    .border(.5f, theme.bolderColor).padding(layout.margin)
+                    .clip(frameShape).background(theme.bgColor)
+                    .border(1f, theme.bolderColor, shape = frameShape).padding(layout.margin)
             ) {
                 text(title, textModifier = titleStyle)
                 if (total != null) text("Total: $total", modifier = Modifier.padding(top = 6f), textModifier = bodyStyle)
-                if (daily != null) text("Daily: $daily", modifier = Modifier.padding(top = 6f, bottom = 16f), textModifier = bodyStyle)
-                waterfall(columns = 2, width = dashboardWidth, columnSpacing = 24f, rowSpacing = 18f,
-                    modifier = Modifier.padding(top = if (daily == null) 16f else 0f)) {
+                if (daily != null) text("Daily: $daily", modifier = Modifier.padding(top = 6f), textModifier = bodyStyle)
+                if (activity != null) {
+                    column(
+                        Modifier.padding(top = 16f).width(dashboardWidth)
+                            .border(1f, theme.bolderColor, shape = frameShape).padding(16f)
+                    ) {
+                        text("Activity · ${activity.range}", textModifier = labelStyle)
+                        column(Modifier.padding(top = 14f)) {
+                            with(Heatmap2dRender) {
+                                calendarGrid(activity.byMonth, 5, layout, theme, cellSize = 13f, cellPadding = 2f, textSize = 14f)
+                            }
+                        }
+                        val legendStyle = TextModifier.font(
+                            fontSize = 14f, textColor = theme.textColor, fontFamily = layout.textFontFamily
+                        )
+                        row(Modifier.padding(top = 10f), verticalAlignment = VerticalAlignment.Center) {
+                            text("Less", modifier = Modifier.padding(right = 6f), textModifier = legendStyle)
+                            for (level in 0..5) {
+                                box(
+                                    Modifier.padding(right = 4f).size(13f)
+                                        .clip(Shape.RoundedRect(3f))
+                                        .background(Heatmap2dRender.intensityColor(level, 5, theme))
+                                        .border(.5f, theme.textColor, shape = Shape.RoundedRect(3f))
+                                )
+                            }
+                            text("More", modifier = Modifier.padding(left = 2f), textModifier = legendStyle)
+                        }
+                    }
+                }
+                if (sections.isNotEmpty()) waterfall(columns = 2, width = dashboardWidth, columnSpacing = 24f, rowSpacing = 18f,
+                    modifier = Modifier.padding(top = if (activity == null) 16f else 18f)) {
                     sections.forEach { (section, values) ->
                         val shown = values.take(5)
                         val remainder = values.drop(5).sumOf { it.percent.toDouble() }.toFloat()
                         val chartSlices = shown.mapIndexed { index, value -> PieSlice(value.name, value.percent, colors[index]) } +
                             if (remainder > 0f) listOf(PieSlice("Others", remainder, colors[5])) else emptyList()
                         column(
-                            Modifier.width(cardWidth).clip(Shape.RoundedRect(12f))
-                                .border(1f, theme.bolderColor, shape = Shape.RoundedRect(12f)).padding(16f)
+                            // 内容已有内边距，只绘制完整圆角边框，避免重复裁切描边的抗锯齿边缘。
+                            Modifier.width(cardWidth)
+                                .border(1f, theme.bolderColor, shape = frameShape).padding(16f)
                         ) {
                             row(verticalAlignment = VerticalAlignment.Center) {
                                 box(Modifier.size(26f).clip(Shape.RoundedRect(6f)).background(theme.iconColor), HorizontalAlignment.Center, VerticalAlignment.Center) {

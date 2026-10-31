@@ -56,6 +56,93 @@ object Heatmap2dRender {
         }
     }
 
+    internal fun intensityColor(value: Int, max: Int, theme: Theme): Int {
+        val ratio = if (max == 0) 0f else value.toFloat() / max
+        fun channel(shift: Int): Int {
+            val start = (theme.bgColor ushr shift) and 0xff
+            val end = (theme.titleColor ushr shift) and 0xff
+            return (start + (end - start) * ratio).toInt()
+        }
+        return argb(255, channel(16), channel(8), channel(0))
+    }
+
+    /**
+     * 可组合的日历网格，不包含标题、背景或外框。
+     * 每列表示一周，行从周一排列至周日；空值保留透明。
+     */
+    @UiDsl
+    fun UiElement.calendarGrid(
+        byMonth: Map<Pair<Int, Int>, List<List<Pair<LocalDate, Int?>>>>,
+        max: Int,
+        layout: Layout,
+        theme: Theme,
+        cellSize: Float = 15f,
+        cellPadding: Float = 3f,
+        textSize: Float = layout.textSize
+    ) {
+        val bodyTextStyle = TextModifier.font(
+            fontSize = textSize,
+            textColor = theme.textColor,
+            fontFamily = layout.textFontFamily
+        )
+        val cellShape = Shape.RoundedRect(3f)
+
+        val cellStep = cellSize + cellPadding * 2
+
+        @UiDsl
+        fun Row.week(week: List<Pair<LocalDate, Int?>>) = column {
+            for ((_, count) in week) {
+                val color = count?.let { intensityColor(it, max, theme) } ?: Color.TRANSPARENT
+                box(
+                    Modifier.padding(cellPadding)
+                        .size(cellSize)
+                        .clip(cellShape)
+                        .background(color)
+                        .border(.5f, if (count == null) Color.TRANSPARENT else theme.textColor, shape = cellShape)
+                )
+            }
+        }
+
+        @UiDsl
+        fun UiElement.month(
+            year: Int,
+            month: Int,
+            byWeek: List<List<Pair<LocalDate, Int?>>>,
+            index: Int
+        ) {
+            column(horizontalAlignment = if (index == 0) HorizontalAlignment.Right else HorizontalAlignment.Left) {
+                text(
+                    if (byWeek.size >= 3) "${year.toString().substring(2)}.${month.toString().padStart(2, '0')}"
+                    else " ",
+                    modifier = Modifier.padding(horizontal = cellPadding),
+                    textModifier = bodyTextStyle
+                )
+                row {
+                    for (week in byWeek) week(week)
+                }
+            }
+        }
+
+        row {
+            column(Modifier.padding(right = 10f)) {
+                text(" ", textModifier = bodyTextStyle)
+                for (day in 0..6) {
+                    when (day) {
+                        0 -> text("Mon", modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
+                        2 -> text("Wed", modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
+                        4 -> text("Fri", modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
+                        5 -> text("Sat", modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
+                        else -> box(Modifier.height(cellStep))
+                    }
+                }
+            }
+            for ((index, entry) in byMonth.entries.withIndex()) {
+                val (yearMonth, byWeek) = entry
+                month(yearMonth.first, yearMonth.second, byWeek, index)
+            }
+        }
+    }
+
     /**
      * 渲染热力图
      * @param byMonth 日期和对应的计数对列表, 如果某天没有数据则计数为null, 日期第一周数据不满7天的应该在调用前填充
@@ -76,59 +163,6 @@ object Heatmap2dRender {
             textColor = theme.titleColor,
             fontFamily = layout.titleFontFamily
         )
-        val bodyTextStyle = TextModifier.font(
-            fontSize = layout.textSize,
-            textColor = theme.textColor,
-            fontFamily = layout.textFontFamily
-        )
-        val (_, sr, sg, sb) = theme.bgColor.argb()
-        val (_, er, eg, eb) = theme.titleColor.argb()
-        fun getColor(count: Int): Int {
-            val ratio = count.toFloat() / max
-            val r = (sr + (er - sr) * ratio).toInt()
-            val g = (sg + (eg - sg) * ratio).toInt()
-            val b = (sb + (eb - sb) * ratio).toInt()
-            return argb(255, r, g, b)
-        }
-
-        @UiDsl
-        fun Row.week(week: List<Pair<LocalDate, Int?>>) = column {
-            for ((_, count) in week) {
-                val color = count?.let { getColor(it) } ?: Color.TRANSPARENT
-                box(
-                    Modifier.padding(3f)
-                        .size(15f)
-                        .clip(Shape.RoundedRect(3f))
-                        .background(color)
-                        .border(.5f, if (count == null) Color.TRANSPARENT else theme.textColor)
-                )
-            }
-        }
-
-        /**
-         * 一个月的块, 包含了左上角的年月和下方的几周热力图
-         */
-        @UiDsl
-        fun UiElement.months(
-            year: Int,
-            month: Int,
-            byWeek: List<List<Pair<LocalDate, Int?>>>,
-            index: Int
-        ) {
-            // 处理第一个月不满的情况
-            column(horizontalAlignment = if (index == 0) HorizontalAlignment.Right else HorizontalAlignment.Left) {
-                // 小于三周的情况下不显示年月
-                text(
-                    if (byWeek.size >= 3) "${year.toString().substring(2)}.${month.toString().padStart(2, '0')}"
-                    else " ",
-                    modifier = Modifier.padding(horizontal = 3f),
-                    textModifier = bodyTextStyle
-                )
-                row {
-                    for (week in byWeek) week(week)
-                }
-            }
-        }
 
         return render {
             column(
@@ -138,32 +172,9 @@ object Heatmap2dRender {
                     .border(.5f, theme.bolderColor)
                     .padding(layout.margin)
             ) {
-                text(
-                    title,
-                    textModifier = titleTextStyle
-                )
+                text(title, textModifier = titleTextStyle)
                 row(Modifier.padding(top = 20f)) {
-                    // 最左侧星期
-                    val boxModifier = Modifier.height(16f)
-                    column(Modifier.padding(right = 10f)) {
-                        // 一行字的高度
-                        text(
-                            " ",
-                            textModifier = bodyTextStyle
-                        )
-                        text("Mon", textModifier = bodyTextStyle)
-                        box(boxModifier)
-                        text("Wed", textModifier = bodyTextStyle)
-                        box(boxModifier)
-                        text("Fri", textModifier = bodyTextStyle)
-                        box(boxModifier)
-                        text("Sat", textModifier = bodyTextStyle)
-                    }
-                    // 每月数据
-                    for ((index, e) in byMonth.entries.withIndex()) {
-                        val (yearMonth, byWeek) = e
-                        months(yearMonth.first, yearMonth.second, byWeek, index)
-                    }
+                    calendarGrid(byMonth, max, layout, theme)
                 }
             }
         }
