@@ -2,6 +2,8 @@
 
 用于离线渲染 GitHub 和 Wakatime 等开发者状态图片，适合 QQBot 等不支持 SVG 的场景。
 
+图片渲染使用 Tavolo 2.8.0。
+
 [![Release](https://img.shields.io/github/v/release/4o4E/statimg?label=Release)](https://github.com/4o4E/statimg/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/4o4E/statimg/total?label=Download)](https://github.com/4o4E/statimg/releases)
 ## http服务
@@ -76,3 +78,15 @@ url: `/wakatime/editor/{user}`
 ```http request
 GET http://localhost:2345/wakatime/editor/404E?theme=dark
 ```
+
+## WakaTime 综合统计人工预览
+
+使用匿名公开接口读取 `404E` 的统计，按账户公开时间范围生成一张图片。公开的语言、编辑器、操作系统、活动分类和 AI 模型使用圆角环形图，以双列瀑布流排列；每组保留占比最高的五项，其余汇总为 `Others`，显示原始百分比。标题包含时间范围，`Total` 和 `Daily` 分别表示总时长与日均时长。
+
+在 `run/config.yml` 准备项目现有渲染配置（包含 `tokyonight` 主题），从仓库根目录运行：
+
+```shell
+./gradlew :core:manualTest --tests 'top.e404.statimg.manual.WakaDashboardPrototype.renderPublicDashboard'
+```
+
+Windows 使用 `gradlew.bat`。输出为 `run/waka_dashboard.png`，人工任务需要访问 WakaTime；普通测试不会触发该请求。该入口用于图片预览，未接入 HTTP 服务。
