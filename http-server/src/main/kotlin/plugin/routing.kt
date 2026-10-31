@@ -28,26 +28,15 @@ fun Application.routing(wakatimeRender: WakatimeRender, githubRender: GithubRend
         call.respondText(Json.encodeToString(ServerConfig.config.themes2d.keys), ContentType.Application.Json)
     }
 
-    get("/wakatime/{type}/{username}") {
+    get("/wakatime/stats/{username}") {
         val username = call.parameters["username"]!!
         val theme = call.request.queryParameters["theme"]?.let { ServerConfig.config.themes2d[it] } ?: Heatmap2dRender.Theme.default
         try {
-            when (val type = call.parameters["type"]!!.lowercase()) {
-                "lang" -> {
-                    val allLang = call.request.queryParameters["all"]?.toBoolean() == true
-                    call.respondBytes(wakatimeRender.renderLang(username, allLang, theme), ContentType.Image.PNG)
-                }
-
-                "editor" -> call.respondBytes(wakatimeRender.renderEditor(username, theme), ContentType.Image.PNG)
-
-                else -> call.respondText("unknown request type: $type", ContentType.Text.Plain, HttpStatusCode.BadRequest)
-            }
+            call.respondBytes(wakatimeRender.renderStats(username, theme), ContentType.Image.PNG)
         } catch (_: WakatimePublicDataUnavailable) {
             call.respondText("wakatime_public_data_unavailable", status = HttpStatusCode.Forbidden)
         } catch (_: WakatimeUserNotFound) {
             call.respondText("wakatime_user_not_found", status = HttpStatusCode.NotFound)
-        } catch (e: Exception) {
-            call.respondText(e.message ?: "", ContentType.Text.Plain, HttpStatusCode.InternalServerError)
         }
     }
 

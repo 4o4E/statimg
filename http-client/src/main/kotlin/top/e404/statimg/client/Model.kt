@@ -10,21 +10,7 @@ data class StatimgServer(
 }
 
 
-data class WakatimeLanguageRequest(
-    val username: String,
-    val theme: String? = null,
-    val allLanguages: Boolean? = null,
-    val extraQueryParameters: Map<String, String> = emptyMap(),
-) {
-    fun toQueryParameters(): Map<String, String> =
-        linkedMapOf<String, String>().also { parameters ->
-            theme?.let { parameters["theme"] = it }
-            allLanguages?.let { parameters["all"] = it.toString() }
-            parameters.putAll(extraQueryParameters)
-        }
-}
-
-data class WakatimeEditorRequest(
+data class WakatimeStatsRequest(
     val username: String,
     val theme: String? = null,
     val extraQueryParameters: Map<String, String> = emptyMap(),

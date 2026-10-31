@@ -35,30 +35,14 @@ class StatimgClient private constructor(
 
     suspend fun githubThemes(): List<String> = getJson(listOf("github", "themes"))
 
-    suspend fun wakatimeLanguage(request: WakatimeLanguageRequest): ByteArray =
+    suspend fun wakatimeStats(request: WakatimeStatsRequest): ByteArray =
         getBytes(
-            pathSegments = listOf("wakatime", "lang", request.username),
+            pathSegments = listOf("wakatime", "stats", request.username),
             queryParameters = request.toQueryParameters()
         )
 
-    suspend fun wakatimeLanguage(
-        username: String,
-        theme: String? = null,
-        allLanguages: Boolean? = null,
-    ): ByteArray =
-        wakatimeLanguage(WakatimeLanguageRequest(username, theme, allLanguages))
-
-    suspend fun wakatimeEditor(request: WakatimeEditorRequest): ByteArray =
-        getBytes(
-            pathSegments = listOf("wakatime", "editor", request.username),
-            queryParameters = request.toQueryParameters()
-        )
-
-    suspend fun wakatimeEditor(
-        username: String,
-        theme: String? = null,
-    ): ByteArray =
-        wakatimeEditor(WakatimeEditorRequest(username, theme))
+    suspend fun wakatimeStats(username: String, theme: String? = null): ByteArray =
+        wakatimeStats(WakatimeStatsRequest(username, theme))
 
     suspend fun githubContribution(request: GithubContributionRequest): ByteArray =
         getBytes(

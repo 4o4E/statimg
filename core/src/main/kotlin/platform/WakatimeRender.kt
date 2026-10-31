@@ -6,6 +6,9 @@ import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 import top.e404.tavolo.draw.compose.*
+import top.e404.tavolo.draw.compose.charts.*
+import top.e404.tavolo.util.FontManager
+import org.jetbrains.skia.Font
 import top.e404.tavolo.util.bytes
 import top.e404.statimg.IConfig
 import top.e404.statimg.feature.Heatmap2dRender
@@ -21,8 +24,6 @@ class WakatimeRender(val config: IConfig) {
     }
 
     private val layout inline get() = config.layout2d
-    private val barHeight inline get() = layout.barHeight
-    private val barWidth inline get() = layout.barWidth
     private val client inline get() = config.client
 
     private fun titleTextStyle(theme: Heatmap2dRender.Theme) = TextModifier.font(
@@ -31,122 +32,152 @@ class WakatimeRender(val config: IConfig) {
         fontFamily = layout.titleFontFamily
     )
 
-    private fun langTextStyle(theme: Heatmap2dRender.Theme) = TextModifier.font(
-        fontSize = layout.textSize,
-        textColor = theme.textColor,
-        fontFamily = layout.langFontFamily
-    )
-
     private fun bodyTextStyle(theme: Heatmap2dRender.Theme) = TextModifier.font(
         fontSize = layout.textSize,
         textColor = theme.textColor,
         fontFamily = layout.textFontFamily
     )
 
-    suspend fun renderLang(user: String, allLang: Boolean, theme: Heatmap2dRender.Theme): ByteArray {
+    suspend fun renderStats(user: String, theme: Heatmap2dRender.Theme): ByteArray {
         val stats = fetchUserStats(user)
-        if (stats["is_language_usage_visible"]?.jsonPrimitive?.boolean == false || stats["languages"] == null) {
-            throw WakatimePublicDataUnavailable()
+        val definitions = listOf(
+            StatsSection("LANG", "Languages", "is_language_usage_visible", "languages"),
+            StatsSection("IDE", "Editors", "is_editor_usage_visible", "editors"),
+            StatsSection("OS", "Operating Systems", "is_os_usage_visible", "operating_systems"),
+            StatsSection("CAT", "Categories", "is_category_usage_visible", "categories"),
+            StatsSection("AI", "AI Models", "is_ai_model_usage_visible", "ai_models")
+        )
+        val sections = definitions.mapNotNull { section ->
+            if (stats[section.visibilityKey]?.jsonPrimitive?.boolean != true) return@mapNotNull null
+            val values = (stats[section.dataKey] as? JsonArray)?.map { item ->
+                val value = item.jsonObject
+                val name = value.getValue("name").jsonPrimitive.content
+                val percent = value.getValue("percent").jsonPrimitive.float
+                StatsValue(name, percent, percentage(percent))
+            }.orEmpty().sortedByDescending { it.percent }
+            if (values.isEmpty()) null else section to values
         }
-        val statsList = stats["languages"]!!.jsonArray.map {
-            StatsItem(it as JsonObject)
-        }.let { statsList ->
-            if (allLang) statsList
-            else statsList.filter { it.duration != "0 secs" }
-        }
-
-        return renderStats("$user's wakatime stats ${stats["human_readable_range"]!!.jsonPrimitive.content}", statsList, theme)
+        if (sections.isEmpty()) throw WakatimePublicDataUnavailable()
+        val range = stats.getValue("human_readable_range").jsonPrimitive.content
+        val title = "WakaTime · $user · $range"
+        val durationsVisible = stats["is_coding_activity_visible"]?.jsonPrimitive?.boolean == true
+        val total = stats.takeIf { durationsVisible }
+            ?.get("human_readable_total_including_other_language")?.jsonPrimitive?.contentOrNull
+        val daily = stats.takeIf { durationsVisible }
+            ?.get("human_readable_daily_average_including_other_language")?.jsonPrimitive?.contentOrNull
+        return renderDashboard(title, total, daily, sections, theme)
     }
 
-    suspend fun renderEditor(user: String, theme: Heatmap2dRender.Theme): ByteArray {
-        val stats = fetchUserStats(user)
-        if (stats["is_editor_usage_visible"]?.jsonPrimitive?.boolean == false || stats["editors"] == null) {
-            throw WakatimePublicDataUnavailable()
-        }
-        val statsList = stats["editors"]!!.jsonArray.map {
-            StatsItem(it as JsonObject)
-        }
-
-        return renderStats("$user's editor usage stats ${stats["human_readable_range"]!!.jsonPrimitive.content}", statsList, theme)
-    }
-
-    private fun renderStats(title: String, statsList: List<StatsItem>, theme: Heatmap2dRender.Theme) = render {
-        column(
-            modifier = Modifier
-                .clip(Shape.RoundedRect(layout.bgRadii))
-                .background(theme.bgColor)
-                .border(.5f, theme.bolderColor)
-                .padding(layout.margin)
-        ) {
-            text(
-                title,
-                modifier = Modifier.padding(bottom = 20f),
-                textModifier = titleTextStyle(theme)
+    private fun renderDashboard(
+        title: String,
+        total: String?,
+        daily: String?,
+        sections: List<Pair<StatsSection, List<StatsValue>>>,
+        theme: Heatmap2dRender.Theme
+    ): ByteArray {
+        val colors = listOf(0xff7aa2f7.toInt(), 0xffbb9af7.toInt(), 0xff2ac3b3.toInt(), 0xffff9e64.toInt(), 0xfff7768e.toInt(), 0xff565f89.toInt())
+        val chartTheme = PieChartTheme(
+            width = 140f,
+            height = 140f,
+            radius = 65f,
+            innerRadius = 36f,
+            insets = ChartInsets(5f, 5f, 5f, 5f),
+            cornerRadius = 4f,
+            sliceGap = 3f,
+            strokeWidth = 0f,
+            showLabels = false,
+            legend = ChartLegendTheme(position = ChartLegendPosition.NONE)
+        )
+        val titleStyle = titleTextStyle(theme)
+        val labelStyle = TextModifier.font(fontSize = layout.langSize, textColor = theme.titleColor, fontFamily = layout.langFontFamily)
+        val bodyStyle = bodyTextStyle(theme)
+        val (legendWidth, durationWidth) = Font(FontManager.resolve(layout.textFontFamily), layout.textSize).use { font ->
+            val longestLegend = sections.maxOf { (_, values) ->
+                val shownWidth = values.take(5).maxOf { font.measureTextWidth("${it.name}  ${it.percentageLabel}") }
+                val remainder = values.drop(5).sumOf { it.percent.toDouble() }.toFloat()
+                max(shownWidth, if (remainder > 0f) font.measureTextWidth("Others  ${percentage(remainder)}") else 0f)
+            }
+            val longestDuration = max(
+                total?.let { font.measureTextWidth("Total: $it") } ?: 0f,
+                daily?.let { font.measureTextWidth("Daily: $it") } ?: 0f
             )
-            statsList(statsList, theme)
+            longestLegend to longestDuration
         }
-    }.bytes()
+        val cardWidth = max(
+            500f,
+            140f + 14f + 17f + legendWidth + 32f
+        )
+        val dashboardWidth = cardWidth * 2 + 24f
+        val headerWidth = Font(FontManager.resolve(layout.titleFontFamily), layout.titleSize).use { font ->
+            max(font.measureTextWidth(title), durationWidth)
+        }
+        val outerWidth = max(dashboardWidth + layout.margin * 2, headerWidth + layout.margin * 2)
 
-    @UiDsl
-    private fun UiElement.statsList(statsList: List<StatsItem>, theme: Heatmap2dRender.Theme) {
-        table(columnSpacing = 10f, rowSpacing = 5f) {
-            for (lang in statsList) {
-                tableRow {
-                    cell(
-                        horizontalAlignment = HorizontalAlignment.Left,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        text(
-                            lang.name,
-                            textModifier = langTextStyle(theme)
-                        )
-                    }
-                    cell(
-                        horizontalAlignment = HorizontalAlignment.Left,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        box(Modifier.width(layout.barWidth)) {
-                            box(
-                                Modifier
-                                    .width(layout.barWidth)
-                                    .height(layout.barHeight)
-                                    .clip(Shape.RoundedRect(50f))
-                                    .background(theme.textColor)
-                            )
-                            box(
-                                Modifier
-                                    .width(max(barWidth * lang.percent / 100, barHeight))
-                                    .height(layout.barHeight)
-                                    .clip(Shape.RoundedRect(50f))
-                                    .background(theme.titleColor)
-                            )
+        return render {
+            column(
+                Modifier.width(outerWidth)
+                    .clip(Shape.RoundedRect(12f)).background(theme.bgColor)
+                    .border(.5f, theme.bolderColor).padding(layout.margin)
+            ) {
+                text(title, textModifier = titleStyle)
+                if (total != null) text("Total: $total", modifier = Modifier.padding(top = 6f), textModifier = bodyStyle)
+                if (daily != null) text("Daily: $daily", modifier = Modifier.padding(top = 6f, bottom = 16f), textModifier = bodyStyle)
+                waterfall(columns = 2, width = dashboardWidth, columnSpacing = 24f, rowSpacing = 18f,
+                    modifier = Modifier.padding(top = if (daily == null) 16f else 0f)) {
+                    sections.forEach { (section, values) ->
+                        val shown = values.take(5)
+                        val remainder = values.drop(5).sumOf { it.percent.toDouble() }.toFloat()
+                        val chartSlices = shown.mapIndexed { index, value -> PieSlice(value.name, value.percent, colors[index]) } +
+                            if (remainder > 0f) listOf(PieSlice("Others", remainder, colors[5])) else emptyList()
+                        column(
+                            Modifier.width(cardWidth).clip(Shape.RoundedRect(12f))
+                                .border(1f, theme.bolderColor, shape = Shape.RoundedRect(12f)).padding(16f)
+                        ) {
+                            row(verticalAlignment = VerticalAlignment.Center) {
+                                box(Modifier.size(26f).clip(Shape.RoundedRect(6f)).background(theme.iconColor), HorizontalAlignment.Center, VerticalAlignment.Center) {
+                                    icon(IconTheme(20f, color = theme.bgColor), sectionIcon(section.marker))
+                                }
+                                text(section.title, modifier = Modifier.padding(left = 8f), textModifier = labelStyle)
+                            }
+                            row(Modifier.padding(top = 14f), verticalAlignment = VerticalAlignment.Center) {
+                                donutChart(chartTheme, chartSlices)
+                                column(Modifier.padding(left = 14f)) {
+                                    shown.forEachIndexed { index, value ->
+                                        row(Modifier.padding(bottom = 8f), verticalAlignment = VerticalAlignment.Center) {
+                                            box(Modifier.size(10f).clip(Shape.RoundedRect(5f)).background(colors[index]))
+                                            text("${value.name}  ${value.percentageLabel}", modifier = Modifier.padding(left = 7f), textModifier = bodyStyle)
+                                        }
+                                    }
+                                    if (remainder > 0f) row(verticalAlignment = VerticalAlignment.Center) {
+                                        box(Modifier.size(10f).clip(Shape.RoundedRect(5f)).background(colors[5]))
+                                        text("Others  ${percentage(remainder)}", modifier = Modifier.padding(left = 7f), textModifier = bodyStyle)
+                                    }
+                                }
+                            }
                         }
-                    }
-                    cell(
-                        horizontalAlignment = HorizontalAlignment.Left,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        text(
-                            lang.duration,
-                            textModifier = bodyTextStyle(theme)
-                        )
                     }
                 }
             }
-        }
+        }.use { it.bytes() }
     }
 
-    private class StatsItem(
-        val name: String,
-        val percent: Float,
-        val duration: String
-    ) {
-        constructor(jo: JsonObject) : this(
-            name = jo["name"]!!.jsonPrimitive.content,
-            percent = jo["percent"]!!.jsonPrimitive.float,
-            duration = jo["text"]?.jsonPrimitive?.content ?: "${jo["percent"]!!.jsonPrimitive.content}%"
-        )
+    private fun percentage(value: Float): String =
+        "%.2f".format(java.util.Locale.ROOT, value).trimEnd('0').trimEnd('.') + "%"
+
+    /** 图标来自 Google Material Design Icons，Apache-2.0：https://github.com/google/material-design-icons */
+    private fun sectionIcon(marker: String): String {
+        val path = when (marker) {
+            "LANG" -> "M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"
+            "IDE" -> "M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"
+            "OS" -> "M20 3H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h6v2H8v2h8v-2h-2v-2h6c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2"
+            "AI" -> "M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6C4.9 5 4 5.9 4 7v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM9 13a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm7 4H8v-2h8v2zm-1-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"
+            else -> "M23 8c0 1.1-.9 2-2 2-.18 0-.35-.02-.51-.07l-3.56 3.55c.05.16.07.34.07.52 0 1.1-.9 2-2 2s-2-.9-2-2c0-.18.02-.36.07-.52l-2.55-2.55c-.16.05-.34-.07-.52-.07s-.36.02-.52-.07l-4.55 4.56c.05.16.07.33.07.51 0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.18 0 .35.02.51.07l4.56-4.55C8.02 9.36 8 9.18 8 9c0-1.1.9-2 2-2s2 .9 2 2c0 .18-.02.36-.07.52l2.55 2.55c.16.05.34.07.52.07s.36-.02.52-.07l3.55-3.56C19.02 8.35 19 8.18 19 8c0-1.1.9-2 2-2s2 .9 2 2z"
+        }
+        return """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="$path"/></svg>"""
     }
+
+    private data class StatsSection(val marker: String, val title: String, val visibilityKey: String, val dataKey: String)
+    private data class StatsValue(val name: String, val percent: Float, val percentageLabel: String)
 
     private suspend fun fetchUserStats(user: String, retryCount: Int = 0): JsonObject {
         val response = client.get("https://wakatime.com/api/v1/users/${user}/stats")

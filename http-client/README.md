@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    implementation("top.e404.statimg:statimg-http-client:2.1.0")
+    implementation("top.e404.statimg:statimg-http-client:5.0.0")
 }
 ```
 
@@ -53,7 +53,7 @@ suspend fun renderWithSharedClient(httpClient: HttpClient) {
 ## 当前覆盖的接口
 
 - `wakatimeThemes()` / `githubThemes()`：读取可用主题。
-- `wakatimeLanguage(...)` / `wakatimeEditor(...)`：渲染 Wakatime PNG。
+- `wakatimeStats(...)`：通过 `/wakatime/stats/{username}` 渲染 WakaTime 综合统计 PNG。
 - `githubContribution(...)` / `githubContribution3d(...)`：渲染 GitHub 贡献图 PNG。
 - `githubStats(...)` / `githubTopLanguages(...)` / `githubRepo(...)`：渲染 GitHub 卡片 PNG。
 
