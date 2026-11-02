@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    implementation("top.e404.statimg:statimg-http-client:6.0.0")
+    implementation("top.e404.statimg:statimg-http-client:6.0.1")
 }
 ```
 
