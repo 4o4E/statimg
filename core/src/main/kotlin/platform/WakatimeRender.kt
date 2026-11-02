@@ -7,12 +7,10 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 import top.e404.tavolo.draw.compose.*
 import top.e404.tavolo.draw.compose.charts.*
-import top.e404.tavolo.util.FontManager
-import org.jetbrains.skia.Font
 import top.e404.tavolo.util.bytes
 import top.e404.statimg.IConfig
 import top.e404.statimg.feature.Heatmap2dRender
-import kotlin.math.max
+import kotlin.math.ceil
 
 class WakatimePublicDataUnavailable : RuntimeException()
 class WakatimeUserNotFound : RuntimeException()
@@ -98,102 +96,101 @@ class WakatimeRender(val config: IConfig) {
         val titleStyle = titleTextStyle(theme)
         val labelStyle = TextModifier.font(fontSize = layout.langSize, textColor = theme.titleColor, fontFamily = layout.langFontFamily)
         val bodyStyle = bodyTextStyle(theme)
-        val (legendWidth, durationWidth) = Font(FontManager.resolve(layout.textFontFamily), layout.textSize).use { font ->
-            val longestLegend = sections.maxOfOrNull { (_, values) ->
-                val shownWidth = values.take(5).maxOf { font.measureTextWidth("${it.name}  ${it.percentageLabel}") }
-                val remainder = values.drop(5).sumOf { it.percent.toDouble() }.toFloat()
-                max(shownWidth, if (remainder > 0f) font.measureTextWidth("Others  ${percentage(remainder)}") else 0f)
-            } ?: 0f
-            val longestDuration = max(
-                total?.let { font.measureTextWidth("Total: $it") } ?: 0f,
-                daily?.let { font.measureTextWidth("Daily: $it") } ?: 0f
-            )
-            longestLegend to longestDuration
-        }
-        val cardWidth = max(
-            500f,
-            140f + 14f + 17f + legendWidth + 32f
-        )
-        val dashboardWidth = cardWidth * 2 + 24f
-        val headerWidth = Font(FontManager.resolve(layout.titleFontFamily), layout.titleSize).use { font ->
-            max(font.measureTextWidth(title), durationWidth)
-        }
+        val frameWidth = 2f
         val frameShape = Shape.RoundedRect(12f)
-        // 外框的 1px 占位计入尺寸，使内部细边框落在整数像素边界，而非分散到相邻两行或两列。
-        val outerWidth = max(dashboardWidth, headerWidth) + (layout.margin + 1f) * 2
-
-        return render {
-            column(
-                Modifier.width(outerWidth)
-                    .clip(frameShape).background(theme.bgColor)
-                    .border(1f, theme.bolderColor, shape = frameShape).padding(layout.margin)
-            ) {
-                text(title, textModifier = titleStyle)
-                if (total != null) text("Total: $total", modifier = Modifier.padding(top = 6f), textModifier = bodyStyle)
-                if (daily != null) text("Daily: $daily", modifier = Modifier.padding(top = 6f), textModifier = bodyStyle)
-                if (activity != null) {
-                    column(
-                        Modifier.padding(top = 16f).width(dashboardWidth)
-                            .border(1f, theme.bolderColor, shape = frameShape).padding(16f)
-                    ) {
-                        text("Activity · ${activity.range}", textModifier = labelStyle)
-                        column(Modifier.padding(top = 14f)) {
-                            with(Heatmap2dRender) {
-                                calendarGrid(activity.byMonth, 5, layout, theme, cellSize = 13f, cellPadding = 2f, textSize = 14f)
+        val measureContext = MeasureContext()
+        val header = Column().apply {
+            text(title, textModifier = titleStyle)
+            if (total != null) text("Total: $total", modifier = Modifier.padding(top = 6f), textModifier = bodyStyle)
+            if (daily != null) text("Daily: $daily", modifier = Modifier.padding(top = 6f), textModifier = bodyStyle)
+        }
+        val activityBody = activity?.let {
+            Column(HorizontalAlignment.Center).apply {
+                modifier = Modifier.padding(top = 14f)
+                with(Heatmap2dRender) {
+                    calendarGrid(it.byMonth, 5, layout, theme, cellSize = 13f, cellPadding = 2f, textSize = 14f)
+                }
+                val legendStyle = TextModifier.font(
+                    fontSize = 14f, textColor = theme.textColor, fontFamily = layout.textFontFamily
+                )
+                row(Modifier.padding(top = 10f), verticalAlignment = VerticalAlignment.Center) {
+                    text("Less", modifier = Modifier.padding(right = 6f), textModifier = legendStyle)
+                    for (level in 0..5) {
+                        box(
+                            Modifier.padding(right = 4f).size(13f)
+                                .clip(Shape.RoundedRect(3f))
+                                .background(Heatmap2dRender.intensityColor(level, 5, theme))
+                                .border(.5f, theme.textColor, shape = Shape.RoundedRect(3f))
+                        )
+                    }
+                    text("More", modifier = Modifier.padding(left = 2f), textModifier = legendStyle)
+                }
+            }
+        }
+        val activityCard = activity?.let {
+            Column().apply {
+                modifier = Modifier.border(frameWidth, theme.bolderColor, shape = frameShape).padding(16f)
+                text("Activity · ${it.range}", textModifier = labelStyle)
+                add(checkNotNull(activityBody))
+            }
+        }
+        val cards = sections.map { (section, values) ->
+            val shown = values.take(5)
+            val remainder = values.drop(5).sumOf { it.percent.toDouble() }.toFloat()
+            val chartSlices = shown.mapIndexed { index, value -> PieSlice(value.name, value.percent, colors[index]) } +
+                if (remainder > 0f) listOf(PieSlice("Others", remainder, colors[5])) else emptyList()
+            Column().apply {
+                // 内容已有内边距，只绘制完整圆角边框，避免重复裁切描边的抗锯齿边缘。
+                modifier = Modifier.border(frameWidth, theme.bolderColor, shape = frameShape).padding(16f)
+                row(verticalAlignment = VerticalAlignment.Center) {
+                    box(Modifier.size(26f).clip(Shape.RoundedRect(6f)).background(theme.iconColor), HorizontalAlignment.Center, VerticalAlignment.Center) {
+                        icon(IconTheme(20f, color = theme.bgColor), sectionIcon(section.marker))
+                    }
+                    text(section.title, modifier = Modifier.padding(left = 8f), textModifier = labelStyle)
+                }
+                row(Modifier.padding(top = 14f), verticalAlignment = VerticalAlignment.Center) {
+                    donutChart(chartTheme, chartSlices)
+                    column(Modifier.padding(left = 14f)) {
+                        shown.forEachIndexed { index, value ->
+                            row(Modifier.padding(bottom = 8f), verticalAlignment = VerticalAlignment.Center) {
+                                box(Modifier.size(10f).clip(Shape.RoundedRect(5f)).background(colors[index]))
+                                text("${value.name}  ${value.percentageLabel}", modifier = Modifier.padding(left = 7f), textModifier = bodyStyle)
                             }
                         }
-                        val legendStyle = TextModifier.font(
-                            fontSize = 14f, textColor = theme.textColor, fontFamily = layout.textFontFamily
-                        )
-                        row(Modifier.padding(top = 10f), verticalAlignment = VerticalAlignment.Center) {
-                            text("Less", modifier = Modifier.padding(right = 6f), textModifier = legendStyle)
-                            for (level in 0..5) {
-                                box(
-                                    Modifier.padding(right = 4f).size(13f)
-                                        .clip(Shape.RoundedRect(3f))
-                                        .background(Heatmap2dRender.intensityColor(level, 5, theme))
-                                        .border(.5f, theme.textColor, shape = Shape.RoundedRect(3f))
-                                )
-                            }
-                            text("More", modifier = Modifier.padding(left = 2f), textModifier = legendStyle)
+                        if (remainder > 0f) row(verticalAlignment = VerticalAlignment.Center) {
+                            box(Modifier.size(10f).clip(Shape.RoundedRect(5f)).background(colors[5]))
+                            text("Others  ${percentage(remainder)}", modifier = Modifier.padding(left = 7f), textModifier = bodyStyle)
                         }
                     }
                 }
-                if (sections.isNotEmpty()) waterfall(columns = 2, width = dashboardWidth, columnSpacing = 24f, rowSpacing = 18f,
+            }
+        }
+
+        // 先测量完整组件的自然宽度，再共享总宽度；两列及边框均落在整数像素边界。
+        header.measure(measureContext)
+        activityCard?.measure(measureContext)
+        cards.forEach { it.measure(measureContext) }
+        val naturalWaterfallWidth = cards.maxOfOrNull { it.width }?.let { it * 2 + 24f } ?: 0f
+        val dashboardWidth = ceil(maxOf(header.width, activityCard?.width ?: 0f, naturalWaterfallWidth) / 2f) * 2f
+        val cardWidth = (dashboardWidth - 24f) / 2f
+        cards.forEach { it.modifier = Modifier.width(cardWidth).then(it.modifier) }
+        activityCard?.let {
+            it.modifier = Modifier.padding(top = 16f).width(dashboardWidth).then(it.modifier)
+        }
+        activityBody?.let {
+            it.modifier = Modifier.padding(top = 14f).width(dashboardWidth - (16f + frameWidth) * 2)
+        }
+
+        return render(measureContext = measureContext) {
+            column(
+                Modifier.clip(frameShape).background(theme.bgColor)
+                    .border(frameWidth, theme.bolderColor, shape = frameShape).padding(layout.margin)
+            ) {
+                add(header)
+                activityCard?.let { add(it) }
+                if (cards.isNotEmpty()) waterfall(columns = 2, width = dashboardWidth, columnSpacing = 24f, rowSpacing = 18f,
                     modifier = Modifier.padding(top = if (activity == null) 16f else 18f)) {
-                    sections.forEach { (section, values) ->
-                        val shown = values.take(5)
-                        val remainder = values.drop(5).sumOf { it.percent.toDouble() }.toFloat()
-                        val chartSlices = shown.mapIndexed { index, value -> PieSlice(value.name, value.percent, colors[index]) } +
-                            if (remainder > 0f) listOf(PieSlice("Others", remainder, colors[5])) else emptyList()
-                        column(
-                            // 内容已有内边距，只绘制完整圆角边框，避免重复裁切描边的抗锯齿边缘。
-                            Modifier.width(cardWidth)
-                                .border(1f, theme.bolderColor, shape = frameShape).padding(16f)
-                        ) {
-                            row(verticalAlignment = VerticalAlignment.Center) {
-                                box(Modifier.size(26f).clip(Shape.RoundedRect(6f)).background(theme.iconColor), HorizontalAlignment.Center, VerticalAlignment.Center) {
-                                    icon(IconTheme(20f, color = theme.bgColor), sectionIcon(section.marker))
-                                }
-                                text(section.title, modifier = Modifier.padding(left = 8f), textModifier = labelStyle)
-                            }
-                            row(Modifier.padding(top = 14f), verticalAlignment = VerticalAlignment.Center) {
-                                donutChart(chartTheme, chartSlices)
-                                column(Modifier.padding(left = 14f)) {
-                                    shown.forEachIndexed { index, value ->
-                                        row(Modifier.padding(bottom = 8f), verticalAlignment = VerticalAlignment.Center) {
-                                            box(Modifier.size(10f).clip(Shape.RoundedRect(5f)).background(colors[index]))
-                                            text("${value.name}  ${value.percentageLabel}", modifier = Modifier.padding(left = 7f), textModifier = bodyStyle)
-                                        }
-                                    }
-                                    if (remainder > 0f) row(verticalAlignment = VerticalAlignment.Center) {
-                                        box(Modifier.size(10f).clip(Shape.RoundedRect(5f)).background(colors[5]))
-                                        text("Others  ${percentage(remainder)}", modifier = Modifier.padding(left = 7f), textModifier = bodyStyle)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    cards.forEach { add(it) }
                 }
             }
         }.use { it.bytes() }
