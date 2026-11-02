@@ -11,9 +11,7 @@ import top.e404.statimg.IConfig
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import kotlin.math.pow
 
@@ -170,7 +168,7 @@ class GithubFetcher(val config: IConfig) {
 
 
     /**
-     * 获取用于综合图的公开资料、完整仓库语言统计以及同一年度贡献数据。
+     * 获取综合图所需的公开资料、完整仓库语言统计以及主页日历和 API 贡献数据。
      */
     suspend fun fetchDashboard(username: String): GithubDashboardData = coroutineScope {
         require(username.isNotBlank()) { "username is required" }
@@ -179,8 +177,6 @@ class GithubFetcher(val config: IConfig) {
         val from = now.minusSeconds(365L * 24 * 60 * 60)
         val fromDateTime = DateTimeFormatter.ISO_INSTANT.format(from)
         val toDateTime = DateTimeFormatter.ISO_INSTANT.format(now)
-        val fromDate = from.atZone(ZoneOffset.UTC).toLocalDate()
-        val toDate = now.atZone(ZoneOffset.UTC).toLocalDate()
         val query = $$"""
             query Dashboard($login: String!, $repoCursor: String, $from: DateTime!, $to: DateTime!) {
               user(login: $login) {
@@ -198,7 +194,6 @@ class GithubFetcher(val config: IConfig) {
                 contributionsCollection(from: $from, to: $to) {
                   totalCommitContributions totalIssueContributions totalPullRequestContributions
                   totalPullRequestReviewContributions totalRepositoryContributions
-                  contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } }
                 }
                 repositoriesContributedTo(first: 1, privacy: PUBLIC,
                   contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, REPOSITORY]) { totalCount }
@@ -215,7 +210,8 @@ class GithubFetcher(val config: IConfig) {
             }
         """.replace(Regex("\\s{2,}"), " ")
 
-        // Search counts and repository/activity data are independent; cursor pages depend on the prior page.
+        // Search counts, homepage calendar, and repository/activity data are independent; cursor pages depend on the prior page.
+        val homepageCalendar = async { fetchGithubHomepageCalendar(client, username) }
         val mergedPullRequests = async { searchCount("is:pr is:public author:$username is:merged") }
         val openPullRequests = async { searchCount("is:pr is:public author:$username is:open") }
         val closedPullRequests = async { searchCount("is:pr is:public author:$username is:closed -is:merged") }
@@ -283,16 +279,7 @@ class GithubFetcher(val config: IConfig) {
 
         val user = profile!!
         val contribution = user["contributionsCollection"]!!.jsonObject
-        val calendar = contribution["contributionCalendar"]!!.jsonObject
-        val days = calendar["weeks"]!!.jsonArray.flatMap { week ->
-            week.jsonObject["contributionDays"]!!.jsonArray.map { day ->
-                val value = day.jsonObject
-                GithubDashboardDay(
-                    LocalDate.parse(value["date"]!!.jsonPrimitive.content),
-                    value["contributionCount"]!!.jsonPrimitive.int
-                )
-            }
-        }.filter { it.date >= fromDate && it.date <= toDate }
+        val calendar = homepageCalendar.await()
 
         val pullRequests = GithubDashboardPullRequests(
             merged = mergedPullRequests.await(),
@@ -310,10 +297,10 @@ class GithubFetcher(val config: IConfig) {
             languages = languages.map { (name, bytes) -> GithubDashboardLanguage(name, bytes) }
                 .sortedByDescending { it.bytes },
             activity = GithubDashboardActivity(
-                from = fromDate,
-                to = toDate,
-                total = calendar["totalContributions"]!!.jsonPrimitive.int,
-                days = days,
+                from = calendar.from,
+                to = calendar.to,
+                total = calendar.total,
+                days = calendar.days,
                 commits = contribution["totalCommitContributions"]!!.jsonPrimitive.int,
                 issues = contribution["totalIssueContributions"]!!.jsonPrimitive.int,
                 pullRequests = contribution["totalPullRequestContributions"]!!.jsonPrimitive.int,

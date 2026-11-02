@@ -44,7 +44,7 @@ url: `/github/dashboard/{username}`
 GET http://localhost:2345/github/dashboard/4o4E?theme=tokyonight
 ```
 
-仓库及语言读取全部分页，日历与贡献类型使用同一年度区间，PR／Issue 使用公开累计统计；独立统计和头像并发读取，游标分页保留依赖顺序，所有数据就绪后统一绘制。具体范围和图片布局见 [GitHub HTTP API](docs/github-http-api.md#github-综合统计图)。旧独立统计卡与贡献图接口保持不变。
+仓库及语言读取全部分页；热力图、总贡献数与月度趋势共用匿名读取的 GitHub 用户主页贡献日历，采用页面实际显示的滚动年度范围及 tooltip 精确每日次数，并遵循目标用户的公开贡献设置（包括其选择公开展示的受限贡献）。其余五类贡献计数、公开 PR／Issue、仓库及语言等数据仍来自各自原有 API 查询；不会因此取得或展示未授权的私有仓库明细。独立统计、主页日历和头像并发读取，游标分页保留依赖顺序，所有数据就绪后统一绘制。页面结构变化或数据无效时请求失败，不回退到 API 日历。具体范围和图片布局见 [GitHub HTTP API](docs/github-http-api.md#github-综合统计图)。旧独立统计卡与贡献图接口保持不变。
 
 人工预览：在 `run/config.yml` 准备现有渲染配置后，运行 `./gradlew :core:manualTest --tests 'top.e404.statimg.manual.ManualTestGithubRender.testRenderDashboard'`，输出为 `run/github_dashboard.png`。该任务会请求真实 GitHub API。
 

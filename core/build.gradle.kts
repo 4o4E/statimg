@@ -44,6 +44,9 @@ dependencies {
     api(kotlinx("serialization-core-jvm", "1.5.0"))
     api(kotlinx("serialization-json", "1.5.0"))
 
+    // GitHub主页日历使用HTML片段，解析日期和精确贡献次数。
+    implementation("org.jsoup:jsoup:1.23.2")
+
     // Skiko 原生渲染运行时
     implementation(skiko(currentSkikoTarget()))
     implementation("top.e404.tavolo:tavolo-common:${Versions.TAVOLO}")
