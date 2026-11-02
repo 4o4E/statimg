@@ -1,5 +1,9 @@
 package top.e404.statimg.platform
 
+import io.ktor.client.plugins.expectSuccess
+import io.ktor.client.request.get
+import io.ktor.client.statement.readBytes
+import org.jetbrains.skia.Image
 import org.jetbrains.skia.Color
 import top.e404.tavolo.draw.compose.*
 import top.e404.tavolo.draw.compose.charts.BarTheme
@@ -267,6 +271,16 @@ class GithubRender(val config: IConfig) {
                 }
             }
         }.bytes()
+    }
+
+    /**
+     * 综合图只使用公开仓库与公开累计统计；头像与最终图像均在请求结束前释放。
+     */
+    suspend fun renderDashboard(username: String, theme: Heatmap2dRender.Theme): ByteArray {
+        val data = fetcher.fetchDashboard(username)
+        return Image.makeFromEncoded(data.avatarBytes).use { avatar ->
+            GithubDashboardRender.render(data, avatar, config.layout2d, theme).use { it.bytes() }
+        }
     }
 
     suspend fun renderStatsCard(

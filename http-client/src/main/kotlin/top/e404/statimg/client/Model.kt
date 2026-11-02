@@ -57,6 +57,18 @@ enum class GithubNumberFormat(val queryValue: String) {
     LONG("long"),
 }
 
+data class GithubDashboardRequest(
+    val username: String,
+    val theme: String? = null,
+    val extraQueryParameters: Map<String, String> = emptyMap(),
+) {
+    fun toQueryParameters(): Map<String, String> =
+        linkedMapOf<String, String>().also { parameters ->
+            theme?.let { parameters["theme"] = it }
+            parameters.putAll(extraQueryParameters)
+        }
+}
+
 data class GithubStatsRequest(
     val username: String,
     val theme: String? = null,

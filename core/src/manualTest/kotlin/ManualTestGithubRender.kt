@@ -7,6 +7,12 @@ import java.time.LocalDateTime
 import kotlin.test.Test
 
 class ManualTestGithubRender {
+    @Test
+    fun testRenderDashboard() = runBlocking(Dispatchers.IO) {
+        val bytes = ManualTestConfig.githubRender.renderDashboard("4o4E", ManualTestConfig.themes2d)
+        File("github_dashboard.png").writeBytes(bytes)
+    }
+
 
     @Test
     fun testRenderContribution2d() {

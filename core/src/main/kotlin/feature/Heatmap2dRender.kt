@@ -78,7 +78,14 @@ object Heatmap2dRender {
         theme: Theme,
         cellSize: Float = 15f,
         cellPadding: Float = 3f,
-        textSize: Float = layout.textSize
+        textSize: Float = layout.textSize,
+        weekdayLabel: (Int) -> String? = { day -> when (day) {
+            0 -> "Mon"
+            2 -> "Wed"
+            4 -> "Fri"
+            5 -> "Sat"
+            else -> null
+        } }
     ) {
         val bodyTextStyle = TextModifier.font(
             fontSize = textSize,
@@ -127,13 +134,9 @@ object Heatmap2dRender {
             column(Modifier.padding(right = 10f)) {
                 text(" ", textModifier = bodyTextStyle)
                 for (day in 0..6) {
-                    when (day) {
-                        0 -> text("Mon", modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
-                        2 -> text("Wed", modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
-                        4 -> text("Fri", modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
-                        5 -> text("Sat", modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
-                        else -> box(Modifier.height(cellStep))
-                    }
+                    val label = weekdayLabel(day)
+                    if (label == null) box(Modifier.height(cellStep))
+                    else text(label, modifier = Modifier.height(cellStep), textModifier = bodyTextStyle)
                 }
             }
             for ((index, entry) in byMonth.entries.withIndex()) {

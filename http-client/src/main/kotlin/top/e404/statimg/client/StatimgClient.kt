@@ -2,6 +2,8 @@ package top.e404.statimg.client
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
@@ -69,6 +71,16 @@ class StatimgClient private constructor(
     ): ByteArray =
         githubContribution3d(GithubContribution3dRequest(username, theme))
 
+    suspend fun githubDashboard(request: GithubDashboardRequest): ByteArray =
+        getBytes(
+            pathSegments = listOf("github", "dashboard", request.username),
+            queryParameters = request.toQueryParameters(),
+            totalTimeoutMillis = if (closeHttpClient) DASHBOARD_REQUEST_TIMEOUT_MILLIS else null,
+        )
+
+    suspend fun githubDashboard(username: String, theme: String? = null): ByteArray =
+        githubDashboard(GithubDashboardRequest(username, theme))
+
     suspend fun githubStats(request: GithubStatsRequest): ByteArray =
         getBytes(
             pathSegments = listOf("github", "stats", request.username),
@@ -113,8 +125,16 @@ class StatimgClient private constructor(
     private suspend fun getBytes(
         pathSegments: List<String>,
         queryParameters: Map<String, String> = emptyMap(),
+        totalTimeoutMillis: Long? = null,
     ): ByteArray {
-        val response = httpClient.get(buildUrl(pathSegments, queryParameters))
+        val response = httpClient.get(buildUrl(pathSegments, queryParameters)) {
+            totalTimeoutMillis?.let {
+                timeout {
+                    requestTimeoutMillis = it
+                    socketTimeoutMillis = it
+                }
+            }
+        }
         if (!response.status.isSuccess()) throw response.toException()
         return response.readBytes()
     }
@@ -134,7 +154,12 @@ class StatimgClient private constructor(
         StatimgHttpException(status, bodyAsText())
 
     companion object {
-        fun defaultHttpClient(): HttpClient = HttpClient(OkHttp)
+        private const val DASHBOARD_REQUEST_TIMEOUT_MILLIS = 300_000L
+
+        fun defaultHttpClient(): HttpClient = HttpClient(OkHttp) {
+            // 仅启用请求级超时能力；旧接口沿用引擎默认设置。
+            install(HttpTimeout)
+        }
     }
 }
 

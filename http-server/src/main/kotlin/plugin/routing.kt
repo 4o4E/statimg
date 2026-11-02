@@ -4,6 +4,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import top.e404.statimg.platform.WakatimeRender
@@ -65,6 +66,18 @@ fun Application.routing(wakatimeRender: WakatimeRender, githubRender: GithubRend
                 ServerConfig.config.themes3d[theme]
             } ?: ServerConfig.config.themes3d["rainbow"]!!
             call.respondBytes(githubRender.renderContribution3d(username, theme3d), ContentType.Image.PNG)
+        } catch (e: Exception) {
+            call.respondText(e.message ?: "", ContentType.Text.Plain, HttpStatusCode.BadRequest)
+        }
+    }
+
+    get("/github/dashboard/{username}") {
+        val username = call.parameters["username"]!!
+        val theme = call.githubCardTheme()
+        try {
+            call.respondBytes(githubRender.renderDashboard(username, theme), ContentType.Image.PNG)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             call.respondText(e.message ?: "", ContentType.Text.Plain, HttpStatusCode.BadRequest)
         }

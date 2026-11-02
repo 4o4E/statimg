@@ -12,9 +12,9 @@
 
 ### 使用
 
-1. 安装17或更高版本的[java](https://adoptium.net/)
-2. 从[release](https://github.com/4o4E/statimg/releases/latest)下载对应操作系统的jar文件
-3. 在控制台中使用`java -jar http-server-${plateform}.jar`启动服务
+1. 在 Linux x64 安装17或更高版本的 [Java](https://adoptium.net/)。
+2. 从 [Release](https://github.com/4o4E/statimg/releases/latest) 下载 `statimg-<版本>.jar`。
+3. 使用 `java -jar statimg-<版本>.jar` 启动服务；CI 同时发布 `ghcr.io/4o4e/statimg:<版本>` 和 `ghcr.io/4o4e/statimg:latest` 镜像。
 
 [示例配置文件](http-server-linux/config.template.yml)
 
@@ -33,6 +33,20 @@ GET http://localhost:2345/wakatime/themes
 
 ### ["default_repocard","transparent","shadow_red","shadow_green","shadow_blue","dark","radical","merko","gruvbox","gruvbox_light","tokyonight","onedark","cobalt","synthwave","highcontrast","dracula","prussian","monokai","vue","vue-dark","shades-of-purple","nightowl","buefy","blue-green","algolia","great-gatsby","darcula","bear","solarized-dark","solarized-light","chartreuse-dark","nord","gotham","material-palenight","graywhite","vision-friendly-dark","ayu-mirage","midnight-purple","calm","flag-india","omni","react","jolly","maroongold","yeblu","blueberry","slateorange","kacho_ga","outrun","ocean_dark","city_lights","github_dark","github_dark_dimmed","discord_old_blurple","aura_dark","panda","noctis_minimus","cobalt2","swift","aura","apprentice","moltack","codeSTACKr","rose_pine","date_night","one_dark_pro","rose","holi"]
 ```
+
+#### 获取 GitHub 综合统计图
+
+url: `/github/dashboard/{username}`
+
+返回用户头像、公开仓库概览、全年贡献日历、评级、语言、五类贡献蛛网图、月度趋势、公开 PR 状态及仓库 Stars 的单张 PNG。只需传入用户名和可选 `theme`，沿用服务端现有 GitHub 令牌、主题与字体配置。
+
+```http request
+GET http://localhost:2345/github/dashboard/4o4E?theme=tokyonight
+```
+
+仓库及语言读取全部分页，日历与贡献类型使用同一年度区间，PR／Issue 使用公开累计统计；独立统计和头像并发读取，游标分页保留依赖顺序，所有数据就绪后统一绘制。具体范围和图片布局见 [GitHub HTTP API](docs/github-http-api.md#github-综合统计图)。旧独立统计卡与贡献图接口保持不变。
+
+人工预览：在 `run/config.yml` 准备现有渲染配置后，运行 `./gradlew :core:manualTest --tests 'top.e404.statimg.manual.ManualTestGithubRender.testRenderDashboard'`，输出为 `run/github_dashboard.png`。该任务会请求真实 GitHub API。
 
 #### 获取 WakaTime 综合统计图
 

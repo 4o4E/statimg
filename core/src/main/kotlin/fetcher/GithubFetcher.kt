@@ -1,5 +1,6 @@
 package top.e404.statimg.fetcher
 
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -7,7 +8,12 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import top.e404.statimg.IConfig
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import kotlin.math.pow
 
@@ -162,6 +168,178 @@ class GithubFetcher(val config: IConfig) {
         }.bodyAsText().let { Json.decodeFromString<GhResp<GhUserResp>>(it) }
     }
 
+
+    /**
+     * 获取用于综合图的公开资料、完整仓库语言统计以及同一年度贡献数据。
+     */
+    suspend fun fetchDashboard(username: String): GithubDashboardData = coroutineScope {
+        require(username.isNotBlank()) { "username is required" }
+
+        val now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+        val from = now.minusSeconds(365L * 24 * 60 * 60)
+        val fromDateTime = DateTimeFormatter.ISO_INSTANT.format(from)
+        val toDateTime = DateTimeFormatter.ISO_INSTANT.format(now)
+        val fromDate = from.atZone(ZoneOffset.UTC).toLocalDate()
+        val toDate = now.atZone(ZoneOffset.UTC).toLocalDate()
+        val query = $$"""
+            query Dashboard($login: String!, $repoCursor: String, $from: DateTime!, $to: DateTime!) {
+              user(login: $login) {
+                login name avatarUrl followers { totalCount } following { totalCount }
+                repositories(ownerAffiliations: OWNER, privacy: PUBLIC, first: 100, after: $repoCursor,
+                             orderBy: {field: NAME, direction: ASC}) {
+                  totalCount pageInfo { hasNextPage endCursor }
+                  nodes {
+                    name isFork stargazerCount forkCount
+                    languages(first: 100, orderBy: {field: SIZE, direction: DESC}) {
+                      pageInfo { hasNextPage endCursor } edges { size node { name } }
+                    }
+                  }
+                }
+                contributionsCollection(from: $from, to: $to) {
+                  totalCommitContributions totalIssueContributions totalPullRequestContributions
+                  totalPullRequestReviewContributions totalRepositoryContributions
+                  contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } }
+                }
+                repositoriesContributedTo(first: 1, privacy: PUBLIC,
+                  contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, REPOSITORY]) { totalCount }
+              }
+            }
+        """.replace(Regex("\\s{2,}"), " ")
+        val languageQuery = $$"""
+            query RepoLanguages($repo: String!, $owner: String!, $cursor: String) {
+              repository(name: $repo, owner: $owner) {
+                languages(first: 100, after: $cursor, orderBy: {field: SIZE, direction: DESC}) {
+                  pageInfo { hasNextPage endCursor } edges { size node { name } }
+                }
+              }
+            }
+        """.replace(Regex("\\s{2,}"), " ")
+
+        // Search counts and repository/activity data are independent; cursor pages depend on the prior page.
+        val mergedPullRequests = async { searchCount("is:pr is:public author:$username is:merged") }
+        val openPullRequests = async { searchCount("is:pr is:public author:$username is:open") }
+        val closedPullRequests = async { searchCount("is:pr is:public author:$username is:closed -is:merged") }
+        val totalIssues = async { searchCount("is:issue is:public author:$username") }
+
+        val repos = mutableListOf<GithubDashboardRepository>()
+        val languages = linkedMapOf<String, Long>()
+        var repoCursor: String? = null
+        var expectedRepoCount: Int? = null
+        var profile: JsonObject? = null
+        var avatar: kotlinx.coroutines.Deferred<ByteArray>? = null
+        do {
+            val root = graphql(query, buildJsonObject {
+                put("login", username)
+                if (repoCursor != null) put("repoCursor", repoCursor)
+                put("from", fromDateTime)
+                put("to", toDateTime)
+            })
+            val data = root["data"]?.jsonObject ?: error("GitHub GraphQL response has no data")
+            val currentUser = data["user"]?.jsonObjectOrNull() ?: error("GitHub user not found: $username")
+            if (profile == null) {
+                profile = currentUser
+                val avatarUrl = currentUser["avatarUrl"]!!.jsonPrimitive.content
+                avatar = async { client.get(avatarUrl) { expectSuccess = true }.readBytes() }
+            }
+            val connection = currentUser["repositories"]?.jsonObject
+                ?: error("GitHub response has no public repositories")
+            val pageInfo = connection["pageInfo"]!!.jsonObject
+            expectedRepoCount = connection["totalCount"]!!.jsonPrimitive.int
+            val nodes = connection["nodes"]!!.jsonArray
+            for (element in nodes) {
+                val repo = element.jsonObject
+                repos += GithubDashboardRepository(
+                    name = repo["name"]!!.jsonPrimitive.content,
+                    stars = repo["stargazerCount"]!!.jsonPrimitive.int,
+                    forks = repo["forkCount"]!!.jsonPrimitive.int
+                )
+                if (repo["isFork"]!!.jsonPrimitive.boolean) continue
+
+                var languageConnection = repo["languages"]!!.jsonObject
+                while (true) {
+                    for (edge in languageConnection["edges"]!!.jsonArray) {
+                        val value = edge.jsonObject
+                        val name = value["node"]!!.jsonObject["name"]!!.jsonPrimitive.content
+                        languages[name] = (languages[name] ?: 0L) + value["size"]!!.jsonPrimitive.long
+                    }
+                    val languagePage = languageConnection["pageInfo"]!!.jsonObject
+                    if (!languagePage["hasNextPage"]!!.jsonPrimitive.boolean) break
+                    val cursor = languagePage["endCursor"]!!.jsonPrimitive.content
+                    val languageRoot = graphql(languageQuery, buildJsonObject {
+                        put("repo", repo["name"]!!.jsonPrimitive.content)
+                        put("owner", username)
+                        put("cursor", cursor)
+                    })
+                    languageConnection = languageRoot["data"]!!.jsonObject["repository"]!!.jsonObject["languages"]!!.jsonObject
+                }
+            }
+            val hasNext = pageInfo["hasNextPage"]!!.jsonPrimitive.boolean
+            repoCursor = if (hasNext) pageInfo["endCursor"]?.jsonPrimitive?.contentOrNull
+                ?: error("GitHub repository page has no cursor") else null
+        } while (repoCursor != null)
+        check(expectedRepoCount == repos.size) {
+            "GitHub repository pagination mismatch: expected $expectedRepoCount, fetched ${repos.size}"
+        }
+
+        val user = profile!!
+        val contribution = user["contributionsCollection"]!!.jsonObject
+        val calendar = contribution["contributionCalendar"]!!.jsonObject
+        val days = calendar["weeks"]!!.jsonArray.flatMap { week ->
+            week.jsonObject["contributionDays"]!!.jsonArray.map { day ->
+                val value = day.jsonObject
+                GithubDashboardDay(
+                    LocalDate.parse(value["date"]!!.jsonPrimitive.content),
+                    value["contributionCount"]!!.jsonPrimitive.int
+                )
+            }
+        }.filter { it.date >= fromDate && it.date <= toDate }
+
+        val pullRequests = GithubDashboardPullRequests(
+            merged = mergedPullRequests.await(),
+            closed = closedPullRequests.await(),
+            open = openPullRequests.await()
+        )
+        GithubDashboardData(
+            login = user["login"]!!.jsonPrimitive.content,
+            name = user["name"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+                ?: user["login"]!!.jsonPrimitive.content,
+            avatarBytes = avatar!!.await(),
+            followers = user["followers"]!!.jsonObject["totalCount"]!!.jsonPrimitive.int,
+            following = user["following"]!!.jsonObject["totalCount"]!!.jsonPrimitive.int,
+            repositories = repos,
+            languages = languages.map { (name, bytes) -> GithubDashboardLanguage(name, bytes) }
+                .sortedByDescending { it.bytes },
+            activity = GithubDashboardActivity(
+                from = fromDate,
+                to = toDate,
+                total = calendar["totalContributions"]!!.jsonPrimitive.int,
+                days = days,
+                commits = contribution["totalCommitContributions"]!!.jsonPrimitive.int,
+                issues = contribution["totalIssueContributions"]!!.jsonPrimitive.int,
+                pullRequests = contribution["totalPullRequestContributions"]!!.jsonPrimitive.int,
+                reviews = contribution["totalPullRequestReviewContributions"]!!.jsonPrimitive.int,
+                repositories = contribution["totalRepositoryContributions"]!!.jsonPrimitive.int
+            ),
+            pullRequests = pullRequests,
+            totalIssues = totalIssues.await(),
+            contributedTo = user["repositoriesContributedTo"]!!.jsonObject["totalCount"]!!.jsonPrimitive.int
+        )
+    }
+
+    private suspend fun searchCount(query: String): Int {
+        val response = client.get("https://api.github.com/search/issues") {
+            parameter("q", query)
+            header("Authorization", "token ${config.githubToken}")
+            accept(ContentType.Application.Json)
+        }
+        check(response.status.isSuccess()) { "GitHub Search API failed with status ${response.status}" }
+        val result = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        check(result["incomplete_results"]?.jsonPrimitive?.boolean == false) {
+            "GitHub Search API returned incomplete results for query: $query"
+        }
+        return result["total_count"]?.jsonPrimitive?.int
+            ?: error("GitHub Search API response has no total_count")
+    }
     suspend fun fetchStats(
         username: String,
         includeAllCommits: Boolean = false,
