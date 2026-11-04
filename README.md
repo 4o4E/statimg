@@ -2,7 +2,7 @@
 
 用于离线渲染 GitHub 和 Wakatime 等开发者状态图片，适合 QQBot 等不支持 SVG 的场景。
 
-图片渲染使用 Tavolo 2.8.0。
+图片渲染使用 Tavolo 2.9.1。
 
 [![Release](https://img.shields.io/github/v/release/4o4E/statimg?label=Release)](https://github.com/4o4E/statimg/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/4o4E/statimg/total?label=Download)](https://github.com/4o4E/statimg/releases)
@@ -45,6 +45,8 @@ GET http://localhost:2345/github/dashboard/4o4E?theme=tokyonight
 ```
 
 仓库及语言读取全部分页；热力图、总贡献数与月度趋势共用匿名读取的 GitHub 用户主页贡献日历，采用页面实际显示的滚动年度范围及 tooltip 精确每日次数，并遵循目标用户的公开贡献设置（包括其选择公开展示的受限贡献）。其余五类贡献计数、公开 PR／Issue、仓库及语言等数据仍来自各自原有 API 查询；不会因此取得或展示未授权的私有仓库明细。独立统计、主页日历和头像并发读取，游标分页保留依赖顺序，所有数据就绪后统一绘制。页面结构变化或数据无效时请求失败，不回退到 API 日历。具体范围和图片布局见 [GitHub HTTP API](docs/github-http-api.md#github-综合统计图)。旧独立统计卡与贡献图接口保持不变。
+
+贡献蛛网图的零次贡献位于圆心；五类贡献全零时显示单个数据色圆心点，不生成正数内圈面积。正数对应 `1／10／100／1k／10k` 五层网格，旧 `c3d` 使用相同转换和圆心标记。综合图按网格、刻度与标签的完整内容自然测量尺寸，不缩放半径或字体；月度趋势只显示水平参考网格，保留坐标轴和数字月份。
 
 人工预览：在 `run/config.yml` 准备现有渲染配置后，运行 `./gradlew :core:manualTest --tests 'top.e404.statimg.manual.ManualTestGithubRender.testRenderDashboard'`，输出为 `run/github_dashboard.png`。该任务会请求真实 GitHub API。
 

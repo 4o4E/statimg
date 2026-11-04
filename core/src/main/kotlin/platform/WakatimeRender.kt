@@ -140,7 +140,6 @@ class WakatimeRender(val config: IConfig) {
             val chartSlices = shown.mapIndexed { index, value -> PieSlice(value.name, value.percent, colors[index]) } +
                 if (remainder > 0f) listOf(PieSlice("Others", remainder, colors[5])) else emptyList()
             Column().apply {
-                // 内容已有内边距，只绘制完整圆角边框，避免重复裁切描边的抗锯齿边缘。
                 modifier = Modifier.border(frameWidth, theme.bolderColor, shape = frameShape).padding(16f)
                 row(verticalAlignment = VerticalAlignment.Center) {
                     box(Modifier.size(26f).clip(Shape.RoundedRect(6f)).background(theme.iconColor), HorizontalAlignment.Center, VerticalAlignment.Center) {

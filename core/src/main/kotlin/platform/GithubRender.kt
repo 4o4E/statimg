@@ -24,6 +24,10 @@ import java.time.temporal.ChronoUnit
 import kotlin.math.log10
 import kotlin.math.pow
 
+/** 零次位于圆心；正数对应1、10、100、1k、10k五层网格，超过10k的计数停在外圈。 */
+internal fun githubContributionRate(count: Int): Float =
+    if (count == 0) 0f else ((1f + log10(count.toFloat())) / 5f).coerceAtMost(1f)
+
 class GithubRender(val config: IConfig) {
     private val fetcher = GithubFetcher(config)
 
@@ -204,8 +208,7 @@ class GithubRender(val config: IConfig) {
                         "Review" to user.contributionsCollection.totalPullRequestReviewContributions!!,
                         "Repo" to user.contributionsCollection.totalRepositoryContributions!!,
                     ).map { (name, v) ->
-                        val scaled = if (v == 0) -.1f else log10(v.toDouble()).toFloat()
-                        name to scaled / 4f
+                        name to githubContributionRate(v)
                     }
                     row(Modifier.padding(40f), VerticalAlignment.Center) {
                         val radarTheme = RadarTheme(

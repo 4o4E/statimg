@@ -1,12 +1,12 @@
 object Versions {
     const val GROUP = "top.e404"
-    const val VERSION = "6.0.1"
+    const val VERSION = "6.0.2"
     const val KOTLIN = "2.2.21"
     const val SKIKO = "0.9.30"
     const val KTOR = "2.3.13"
     const val LOG4J = "2.25.2"
     const val KAML = "0.80.1"
-    const val TAVOLO = "2.8.0"
+    const val TAVOLO = "2.9.1"
 }
 
 fun kotlinx(id: String, version: String = Versions.KOTLIN) = "org.jetbrains.kotlinx:kotlinx-$id:$version"

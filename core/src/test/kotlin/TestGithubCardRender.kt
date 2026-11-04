@@ -10,9 +10,20 @@ import top.e404.statimg.platform.GithubLanguagesRenderOptions
 import top.e404.statimg.platform.GithubRankCalculator
 import top.e404.statimg.platform.GithubRepoRenderOptions
 import top.e404.statimg.platform.GithubStatsRenderOptions
+import top.e404.statimg.platform.githubContributionRate
 import kotlin.test.assertEquals
 
 class TestGithubCardRender {
+    @Test
+    fun contributionCountsKeepZeroDistinctAndMatchRadarGridRings() {
+        for ((count, expected) in listOf(
+            0 to 0f, 1 to .2f, 10 to .4f, 100 to .6f,
+            1_000 to .8f, 10_000 to 1f, Int.MAX_VALUE to 1f
+        )) {
+            assertEquals(expected, githubContributionRate(count), .00001f, "贡献次数：$count")
+        }
+    }
+
     @Test
     fun testRankCalculatorMatchesUpstreamFixtures() {
         GithubRankCalculator.calculate(

@@ -1,6 +1,5 @@
 package top.e404.statimg.platform
 
-import org.jetbrains.skia.Font
 import org.jetbrains.skia.Image
 import top.e404.statimg.feature.Heatmap2dRender
 import top.e404.statimg.fetcher.GithubDashboardData
@@ -8,7 +7,6 @@ import top.e404.statimg.fetcher.GithubDashboardDay
 import top.e404.statimg.fetcher.GithubDashboardRepository
 import top.e404.tavolo.draw.compose.*
 import top.e404.tavolo.draw.compose.charts.*
-import top.e404.tavolo.util.FontManager
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -16,10 +14,8 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.ceil
-import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 /** 综合图使用类型化公开统计；调用方持有头像与返回图片，内部评级图片仅在合成期间存活。 */
 object GithubDashboardRender {
@@ -63,7 +59,7 @@ object GithubDashboardRender {
             val cards = listOf(
                 statsCard(data, stars, badge, cardWidth, layout, theme, titleStyle),
                 donutCard("Languages", data.languages.map { it.name to it.bytes }, cardWidth, context, layout, theme, titleStyle, bodyStyle, "No language bytes reported", ::compactBytes),
-                radarCard(data, cardWidth, context, layout, theme, titleStyle),
+                radarCard(data, cardWidth, layout, theme, titleStyle),
                 monthlyCard(data.activity.days, cardWidth, layout, theme, titleStyle, bodyStyle),
                 donutCard("Public pull requests", listOf("Merged" to data.pullRequests.merged, "Closed" to data.pullRequests.closed, "Open" to data.pullRequests.open), cardWidth, context, layout, theme, titleStyle, bodyStyle, "No pull requests reported"),
                 repoStarsCard(data.repositories, cardWidth, context, theme, titleStyle, bodyStyle, smallStyle)
@@ -260,7 +256,7 @@ object GithubDashboardRender {
     }
 
     private fun radarCard(
-        data: GithubDashboardData, width: Float, context: MeasureContext,
+        data: GithubDashboardData, width: Float,
         layout: Heatmap2dRender.Layout, theme: Heatmap2dRender.Theme, titleStyle: TextModifier
     ): Column {
         val values = listOf(
@@ -275,22 +271,15 @@ object GithubDashboardRender {
             gridFontColor = theme.textColor, gridFontSize = layout.textSize * .7f, gridFontFamily = layout.textFontFamily,
             gridFontProvider = { index -> val count = 10.0.pow(index).toInt(); if (count > 100) "${count / 1000}k" else count.toString() },
             labelFontColor = theme.textColor, labelFontSize = layout.textSize * .72f,
-            labelFontFamily = layout.textFontFamily, labelOuterLength = 20f, labelFixPolicy = RadarFixPolicy.NONE
+            labelFontFamily = layout.textFontFamily, labelOuterLength = 20f, labelFixPolicy = RadarFixPolicy.NONE,
+            sizeMode = RadarSizeMode.NATURAL, naturalPadding = 4f
         )
-        val rates = values.map { (name, count) -> name to if (count == 0) -.1f else log10(count.toDouble()).toFloat() / 4f }
-        val descent = Font(FontManager.resolve(radarTheme.labelFontFamily), radarTheme.labelFontSize).use { context.textMeasurer.metrics(it).descent }
-        val bottom = values.indices.maxOf { index ->
-            (radarTheme.radius + radarTheme.labelOuterLength) * sin(index * 2 * Math.PI / values.size - Math.PI / 2).toFloat()
-        }
-        // 保留c3d五轴及零值类别，只按最下面标签的真实下缘收紧布局，不裁切或变形。
-        val height = ceil(radarTheme.height / 2 + bottom + descent + 4f)
+        val rates = values.map { (name, count) -> name to githubContributionRate(count) }
         return Column().apply {
             modifier = Modifier.width(width).border(border, theme.bolderColor, shape = frame).padding(padding)
             text("Contribution types", textModifier = titleStyle)
             column(Modifier.width(width - cardInsets), horizontalAlignment = HorizontalAlignment.Center) {
-                add(CanvasElement(radarTheme.width, height) { canvas, measureContext ->
-                    drawRadarChart(canvas, x, y, rates, radarTheme, measureContext)
-                })
+                radar(radarTheme, rates)
             }
         }
     }
@@ -312,7 +301,8 @@ object GithubDashboardRender {
             xMin = 0f, xMax = (months.size - 1).coerceAtLeast(1).toFloat(),
             xTickCount = if (months.size > 1) (1..4).filter { (months.size - 1) % it == 0 }.maxOrNull() ?: 1 else 0,
             xLabelFormatter = { value -> months.getOrNull(value.toInt())?.first?.monthValue?.toString() ?: "" },
-            yLabelFormatter = { it.toInt().toString() }
+            yLabelFormatter = { it.toInt().toString() },
+            showVerticalGrid = false
         )
         return Column().apply {
             modifier = Modifier.width(width).border(border, theme.bolderColor, shape = frame).padding(padding)
