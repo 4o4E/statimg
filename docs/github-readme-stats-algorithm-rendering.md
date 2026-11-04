@@ -323,93 +323,23 @@ displayPercent = lang.size / sum(selectedLang.size) * 100
 5. `ring_color` 默认跟随 `titleColor`。
 6. `border_color` 如果主题没有提供，则回退到默认主题。
 
-本项目当前 2D/3D 热力图主题与上游卡片主题不是一套模型。建议新增 `GithubCardTheme`，不要强行复用 `Heatmap2dRender.Theme`：
+本项目的独立卡片和综合图复用 `Heatmap2dRender.Theme`，通过服务配置 `themes2d` 选择主题。上述颜色覆盖和渐变规则是上游能力，不是本项目已暴露的请求参数；当前接口只接受主题名称，未知名称使用内置默认主题。3D贡献图单独使用 `themes3d`。
 
-```kotlin
-data class GithubCardTheme(
-    val titleColor: Int,
-    val textColor: Int,
-    val iconColor: Int,
-    val ringColor: Int,
-    val background: CardBackground,
-    val borderColor: Int,
-    val borderRadius: Float = 4.5f
-)
-```
+## 10. HTTP API
 
-`CardBackground` 可先只支持纯色，渐变后续再加。
+完整路由、参数、默认值、统计范围、错误响应和实际图片统一维护在[HTTP API文档](http-api.md)；机器可读契约见[OpenAPI 3.1](openapi.yaml)。本算法参考不单独维护另一份接口清单。
 
-## 10. HTTP API 建议
+## 11. 本项目对应实现
 
-已实现接口的使用说明见 [`github-http-api.md`](github-http-api.md)。本节保留为迁移阶段的接口设计记录。
-
-为了贴近上游接口，同时符合本项目已有 `/github/...` 风格，可以新增：
-
-- `GET /github/stats/{username}`
-- `GET /github/top-langs/{username}`
-- `GET /github/repo/{owner}/{repo}`
-
-建议先支持的 query 参数：
-
-Stats：
-
-- `theme`
-- `hide`
-- `show_icons`
-- `hide_rank`
-- `include_all_commits`
-- `commits_year`
-- `exclude_repo`
-- `show`
-- `rank_icon`
-- `number_format`
-- `number_precision`
-
-Top languages：
-
-- `theme`
-- `layout`
-- `langs_count`
-- `hide`
-- `hide_progress`
-- `exclude_repo`
-- `size_weight`
-- `count_weight`
-- `stats_format`
-
-Repo：
-
-- `theme`
-- `show_owner`
-- `description_lines_count`
-
-## 11. 推荐实现顺序
-
-1. 新增纯算法层：
-   - `GithubRankCalculator`
-   - `GithubNumberFormatter`
-   - `GithubLanguageAggregator`
-2. 扩展 `GithubFetcher`：
-   - `fetchStats`
-   - `fetchTopLanguages`
-   - `fetchRepo`
-   - REST Search Commits 支持 `include_all_commits`
-3. 添加单元测试：
-   - 直接移植上游 `calculateRank.test.js` 关键用例。
-   - 语言聚合测试覆盖 `size_weight/count_weight`、`exclude_repo`、`hide` 和 `langs_count`。
-4. 实现通用卡片渲染外壳：
-   - 背景、边框、标题、padding、主题。
-   - 先输出 PNG，后续如需要再加 SVG backend。
-5. 实现 stats card。
-6. 实现 repo card。
-7. 实现 top languages card 的 `normal` 和 `compact`。
-8. 再实现 `donut`、`donut-vertical`、`pie`。
+- 评级、数值格式和独立卡片布局：[GithubCardRender](../core/src/main/kotlin/platform/GithubCardRender.kt)。
+- 统计、语言权重、仓库及公开综合数据读取：[GithubFetcher](../core/src/main/kotlin/fetcher/GithubFetcher.kt)。
+- 综合图瀑布流及多图表布局：[GithubDashboardRender](../core/src/main/kotlin/platform/GithubDashboardRender.kt)。
+- HTTP参数解析与响应：[routing](../http-server/src/main/kotlin/plugin/routing.kt)。
 
 ## 12. 风险点
 
 - 上游 stats 的全量提交数依赖 REST Search API，rate limit 和结果准确性都不同于 GraphQL `contributionsCollection`。
 - GitHub GraphQL 的 `totalCommitContributions` 是贡献日历语义，默认近一年，不等于账号历史总提交。
-- top languages 的统计只覆盖 owner 非 fork 前 100 仓库和每仓库前 10 语言。
-- 上游 SVG 使用 CSS 动画，本项目 PNG 静态输出时需要舍弃或转为固定最终状态。
+- 独立语言卡只读取用户所属非Fork前100仓库和每仓库前10语言；Dashboard语言使用公开仓库及语言的完整分页，二者不能混用统计范围。
+- 本项目输出静态PNG，不提供上游SVG的CSS动画。
 - 字体测量差异会导致布局宽度和换行与 SVG 版本不同；需要以视觉稳定为目标，而不是逐像素一致。
-- README、接口文档和错误处理需要统一字符编码，当前控制台读取 README 时出现乱码，后续编辑文档应确认 UTF-8。

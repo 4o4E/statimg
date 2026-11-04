@@ -2,6 +2,8 @@
 
 `http-client` 提供基于 Ktor `HttpClient` 的类型化调用封装，只负责访问当前项目的 HTTP API，不依赖 `core`、`http-server` 或 Skiko 渲染运行时。
 
+完整请求参数、错误码和实际示例图片见[HTTP API文档](../docs/http-api.md)，标准契约见[OpenAPI 3.1](../docs/openapi.yaml)。
+
 ## 基本用法
 
 ```kotlin

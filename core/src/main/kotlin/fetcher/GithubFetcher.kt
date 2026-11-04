@@ -520,15 +520,8 @@ class GithubFetcher(val config: IConfig) {
                 forkCount
             }
             query getRepo($login: String!, $repo: String!) {
-                user(login: $login) {
-                    repository(name: $repo) {
-                        ...RepoInfo
-                    }
-                }
-                organization(login: $login) {
-                    repository(name: $repo) {
-                        ...RepoInfo
-                    }
+                repository(owner: $login, name: $repo) {
+                    ...RepoInfo
                 }
             }
         """.replace(Regex("\\s{2,}"), " ")
@@ -537,8 +530,7 @@ class GithubFetcher(val config: IConfig) {
             put("repo", repoName)
         })
         val data = root["data"]!!.jsonObject
-        val repo = data["user"]?.jsonObjectOrNull()?.get("repository")?.jsonObjectOrNull()
-            ?: data["organization"]?.jsonObjectOrNull()?.get("repository")?.jsonObjectOrNull()
+        val repo = data["repository"]?.jsonObjectOrNull()
             ?: error("Repository not found.")
         if (repo["isPrivate"]!!.jsonPrimitive.boolean) error("Repository not found.")
         val primaryLanguage = repo["primaryLanguage"]?.jsonObjectOrNull()

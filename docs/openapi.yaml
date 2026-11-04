@@ -1,0 +1,559 @@
+openapi: 3.1.0
+info:
+  title: statimg HTTP API
+  version: 6.0.2-SNAPSHOT
+  description: GitHub和WakaTime统计PNG渲染接口。调用方不传平台令牌；GitHub令牌仅由服务端配置，WakaTime使用匿名公开数据。服务不主动缓存、不提供调用方认证或自身限流，公开部署需由反向代理负责。布尔值仅true开启（忽略大小写）；CSV去除首尾空白并忽略空项；无法解析的可选数字按未提供处理；未支持的参数不参与处理。图片请求建议预留300秒超时，但不保证完成时间。
+  license:
+    name: Apache License 2.0
+    identifier: Apache-2.0
+servers:
+- url: http://localhost:2345
+  description: Jar默认地址；Docker映射到2345时也可使用。
+- url: http://localhost
+  description: 仓库Docker Compose的默认宿主机80端口。
+security: []
+tags:
+- name: GitHub
+  description: GitHub图像与2D主题。
+- name: WakaTime
+  description: WakaTime公开统计与2D主题。
+externalDocs:
+  description: 中文文档、全部参数与实际图片
+  url: ./http-api.md
+paths:
+  /github/dashboard/{username}:
+    get:
+      operationId: githubDashboard
+      tags:
+      - GitHub
+      summary: GitHub综合统计图
+      description: 头像、概览、热力图、评级、语言、五类贡献雷达、月度趋势、公开PR状态与仓库Stars，合为双列瀑布流PNG。仓库与语言读取公开仓库的完整分页。热力图/Contributions/月度趋势匿名读取用户主页日历，采用页面范围及精确计数，遵循用户公开贡献设置；失败不回退GraphQL。五类贡献仍按API近365天查询，不增加Private类别，也不会取得他人私有仓库明细。评级不是GitHub官方评级。右上角日期为Asia/Taipei生成当日yyyy.MM.dd，不代表统一统计区间。仅支持theme，不复用独立卡片参数。
+      parameters:
+      - $ref: '#/components/parameters/Username'
+      - $ref: '#/components/parameters/Theme2d'
+      responses:
+        '200':
+          description: PNG二进制图片。
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                actual:
+                  summary: 2026-11-04真实HTTP响应图片
+                  externalValue: ./examples/github-dashboard.png
+        '400':
+          $ref: '#/components/responses/GithubFailure'
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+  /github/contribution/{username}/{end}:
+    get:
+      operationId: githubContribution
+      tags:
+      - GitHub
+      summary: GitHub 2D贡献热力图
+      description: 采用GraphQL贡献日历，非Dashboard的匿名主页日历。截止到end日期的00:00，起点为前一年；非法日期返回400，消息以invalid end date:开头。
+      parameters:
+      - $ref: '#/components/parameters/Username'
+      - $ref: '#/components/parameters/End'
+      - $ref: '#/components/parameters/Theme2d'
+      responses:
+        '200':
+          description: PNG二进制图片。
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                actual:
+                  summary: 2026-11-04真实HTTP响应图片
+                  externalValue: ./examples/github-contribution.png
+        '400':
+          $ref: '#/components/responses/GithubFailure'
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+  /github/contribution3d/{username}:
+    get:
+      operationId: githubContribution3d
+      tags:
+      - GitHub
+      summary: GitHub 3D贡献图
+      description: 包含3D柱图、提交语言环形图、五类贡献雷达及贡献/Stars/Forks汇总。采用GraphQL默认贡献范围，不支持选择日期。Stars/Forks最多读取100个所属仓库；语言为贡献仓库的主要语言，不是语言字节量。仅此接口使用themes3d，默认rainbow。
+      parameters:
+      - $ref: '#/components/parameters/Username'
+      - $ref: '#/components/parameters/Theme3d'
+      responses:
+        '200':
+          description: PNG二进制图片。
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                actual:
+                  summary: 2026-11-04真实HTTP响应图片
+                  externalValue: ./examples/github-contribution3d.png
+        '400':
+          $ref: '#/components/responses/GithubFailure'
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+  /github/stats/{username}:
+    get:
+      operationId: githubStats
+      tags:
+      - GitHub
+      summary: GitHub评级统计卡
+      description: 独立统计卡，默认显示stars/commits/prs/issues/contribs及评级。Stars仅汇总按Stars降序的前100个所属仓库，不保证覆盖全部仓库；其他指标各有自身范围，取决于当前API和令牌可见范围。默认提交贡献为近一年，Review不受commits_year影响。不是Dashboard的完整公开分页统计。找不到用户或上游失败返回400。
+      parameters:
+      - $ref: '#/components/parameters/Username'
+      - $ref: '#/components/parameters/Theme2d'
+      - $ref: '#/components/parameters/StatsHide'
+      - $ref: '#/components/parameters/StatsShow'
+      - $ref: '#/components/parameters/ShowIcons'
+      - $ref: '#/components/parameters/HideRank'
+      - $ref: '#/components/parameters/IncludeAllCommits'
+      - $ref: '#/components/parameters/CommitsYear'
+      - $ref: '#/components/parameters/ExcludeRepo'
+      - $ref: '#/components/parameters/RankIcon'
+      - $ref: '#/components/parameters/NumberFormat'
+      - $ref: '#/components/parameters/NumberPrecision'
+      - $ref: '#/components/parameters/CustomTitle'
+      responses:
+        '200':
+          description: PNG二进制图片。
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                actual:
+                  summary: 2026-11-04真实HTTP响应图片
+                  externalValue: ./examples/github-stats.png
+        '400':
+          $ref: '#/components/responses/GithubFailure'
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+  /github/top-langs/{username}:
+    get:
+      operationId: githubTopLanguages
+      tags:
+      - GitHub
+      summary: GitHub语言卡
+      description: 最多聚合100个用户所属非Fork仓库、每仓库前10种语言。表示加权语言字节量，不代表编码时间；并非Dashboard的完整公开分页语言统计。langs_count之外的语言不合并为Others，hide按语言名称忽略大小写匹配。
+      parameters:
+      - $ref: '#/components/parameters/Username'
+      - $ref: '#/components/parameters/Theme2d'
+      - $ref: '#/components/parameters/LanguagesLayout'
+      - $ref: '#/components/parameters/LanguagesCount'
+      - $ref: '#/components/parameters/LanguagesHide'
+      - $ref: '#/components/parameters/HideProgress'
+      - $ref: '#/components/parameters/ExcludeRepo'
+      - $ref: '#/components/parameters/SizeWeight'
+      - $ref: '#/components/parameters/CountWeight'
+      - $ref: '#/components/parameters/StatsFormat'
+      - $ref: '#/components/parameters/CustomTitle'
+      responses:
+        '200':
+          description: PNG二进制图片。
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                actual:
+                  summary: 2026-11-04真实HTTP响应图片
+                  externalValue: ./examples/github-top-langs.png
+        '400':
+          $ref: '#/components/responses/GithubFailure'
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+  /github/repo/{owner}/{repo}:
+    get:
+      operationId: githubRepo
+      tags:
+      - GitHub
+      summary: GitHub仓库卡
+      description: 仅支持公开仓库，返回仓库名、描述、主要语言、Stars与Forks等。即使令牌可读取私有仓库也拒绝渲染；不存在、私有、当前令牌不可见或绘制失败均返回400，不是404。
+      parameters:
+      - $ref: '#/components/parameters/Owner'
+      - $ref: '#/components/parameters/Repo'
+      - $ref: '#/components/parameters/Theme2d'
+      - $ref: '#/components/parameters/ShowOwner'
+      - $ref: '#/components/parameters/DescriptionLines'
+      responses:
+        '200':
+          description: PNG二进制图片。
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                actual:
+                  summary: 2026-11-04真实HTTP响应图片
+                  externalValue: ./examples/github-repo.png
+        '400':
+          $ref: '#/components/responses/GithubFailure'
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+  /wakatime/stats/{username}:
+    get:
+      operationId: wakatimeStats
+      tags:
+      - WakaTime
+      summary: WakaTime综合统计图
+      description: 仅用匿名公开接口，不使用个人令牌、App token或Secret API Key。语言/编辑器/操作系统/活动分类/AI模型各有独立公开权限；前五项外合并Others。分类采用用户配置的公开范围，不支持range参数。Total/Daily只在时长公开时显示。活动日历单独采用首页年度范围，分档值不累加为时长。仅分类或仅日历公开时也可渲染；两者都没有可展示数据时403，不存在的用户404，其他未捕获异常500。
+      parameters:
+      - $ref: '#/components/parameters/WakatimeUsername'
+      - $ref: '#/components/parameters/Theme2d'
+      responses:
+        '200':
+          description: PNG二进制图片。
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+              examples:
+                actual:
+                  summary: 2026-11-04真实HTTP响应图片
+                  externalValue: ./examples/wakatime-stats.png
+        '403':
+          $ref: '#/components/responses/WakatimePublicDataUnavailable'
+        '404':
+          $ref: '#/components/responses/WakatimeUserNotFound'
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+  /github/themes:
+    get:
+      operationId: githubThemes
+      tags:
+      - GitHub
+      summary: GitHub可用2D主题
+      description: 返回当前服务themes2d的全部键；两个主题接口使用同一配置。无包装对象，不包含3D主题，名称不作为固定枚举。
+      responses:
+        '200':
+          description: JSON字符串数组。
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              examples:
+                actual:
+                  summary: 实际完整主题响应
+                  externalValue: ./examples/github-themes.json
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+  /wakatime/themes:
+    get:
+      operationId: wakatimeThemes
+      tags:
+      - WakaTime
+      summary: WakaTime可用2D主题
+      description: 返回当前服务themes2d的全部键；两个主题接口使用同一配置。无包装对象，不包含3D主题，名称不作为固定枚举。
+      responses:
+        '200':
+          description: JSON字符串数组。
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              examples:
+                actual:
+                  summary: 实际完整主题响应
+                  externalValue: ./examples/wakatime-themes.json
+        '500':
+          $ref: '#/components/responses/UnhandledFailure'
+components:
+  parameters:
+    Username:
+      name: username
+      in: path
+      required: true
+      description: GitHub 用户名。
+      schema:
+        type: string
+      example: octocat
+    WakatimeUsername:
+      name: username
+      in: path
+      required: true
+      description: WakaTime 用户标识；仅查询公开数据。
+      schema:
+        type: string
+      example: 404E
+    Owner:
+      name: owner
+      in: path
+      required: true
+      description: 仓库所有者，支持用户或组织。
+      schema:
+        type: string
+      example: octocat
+    Repo:
+      name: repo
+      in: path
+      required: true
+      description: 仓库短名称，不包含所有者或.git后缀。
+      schema:
+        type: string
+      example: Hello-World
+    End:
+      name: end
+      in: path
+      required: true
+      description: yyyy-MM-dd；截止到该日00:00，起点为前一年，不是截止日的结束时刻。
+      schema:
+        type: string
+        format: date
+      example: '2026-11-04'
+    Theme2d:
+      name: theme
+      in: query
+      required: false
+      description: themes2d中的名称，精确匹配；省略或未知名称使用内置默认主题，不一定是列表首项。
+      schema:
+        type: string
+      example: tokyonight
+    Theme3d:
+      name: theme
+      in: query
+      required: false
+      description: themes3d中的名称；省略或未知名称使用rainbow。两个主题列表接口不返回3D主题，配置须包含rainbow。
+      schema:
+        type: string
+        default: rainbow
+    StatsHide:
+      name: hide
+      in: query
+      required: false
+      description: 隐藏指标的CSV；可用stars,commits,prs,issues,contribs,reviews,prs_merged,prs_merged_percentage,discussions_started,discussions_answered。大小写敏感；隐藏优先于show，仅影响显示。
+      schema:
+        type: array
+        items:
+          type: string
+      example:
+      - issues
+      - contribs
+      style: form
+      explode: false
+    StatsShow:
+      name: show
+      in: query
+      required: false
+      description: 开启可选指标的CSV：reviews,prs_merged,prs_merged_percentage,discussions_started,discussions_answered。大小写敏感，默认空。
+      schema:
+        type: array
+        items:
+          type: string
+      example:
+      - reviews
+      - prs_merged
+      style: form
+      explode: false
+    ShowIcons:
+      name: show_icons
+      in: query
+      required: false
+      description: 显示统计图标；仅true开启，大小写不敏感。
+      schema:
+        type: boolean
+        default: false
+    HideRank:
+      name: hide_rank
+      in: query
+      required: false
+      description: 隐藏评级圆环；仅true开启，大小写不敏感。
+      schema:
+        type: boolean
+        default: false
+    IncludeAllCommits:
+      name: include_all_commits
+      in: query
+      required: false
+      description: 使用Search API的author:username总提交数，不受commits_year或exclude_repo过滤。搜索总数为0或缺失时当前实现返回400。
+      schema:
+        type: boolean
+        default: false
+    CommitsYear:
+      name: commits_year
+      in: query
+      required: false
+      description: 仅设置GraphQL提交贡献的起点为该年01-01T00:00:00Z，不设置终点；不是历史整年查询。include_all_commits=true时显示的Search提交数不使用此年份过滤。无法解析整数时忽略，GitHub可能拒绝超出允许范围的区间。
+      schema:
+        type: integer
+      example: 2026
+    ExcludeRepo:
+      name: exclude_repo
+      in: query
+      required: false
+      description: 排除仓库短名称的CSV，与服务环境EXCLUDE_REPO合并。统计卡只过滤Stars，语言卡过滤语言聚合；不影响Search总提交数。
+      schema:
+        type: array
+        items:
+          type: string
+      example:
+      - repo-a
+      - repo-b
+      style: form
+      explode: false
+    RankIcon:
+      name: rank_icon
+      in: query
+      required: false
+      description: 评级显示方式；default显示等级，percentile显示Top百分比。忽略大小写，未知值使用default。
+      schema:
+        type: string
+        default: default
+        enum:
+        - default
+        - percentile
+    NumberFormat:
+      name: number_format
+      in: query
+      required: false
+      description: short使用k/M/B，long使用完整数值；忽略大小写，未知值使用short。
+      schema:
+        type: string
+        default: short
+        enum:
+        - short
+        - long
+    NumberPrecision:
+      name: number_precision
+      in: query
+      required: false
+      description: 缩写数值的小数位数，截断到0..2；无法解析时为1。小于1000的数值及完整格式使用各自固定格式。
+      schema:
+        type: integer
+        default: 1
+    CustomTitle:
+      name: custom_title
+      in: query
+      required: false
+      description: 替换默认卡片标题；需要URL编码。
+      schema:
+        type: string
+      example: My GitHub Stats
+    LanguagesLayout:
+      name: layout
+      in: query
+      required: false
+      description: 语言卡布局，忽略大小写；donut_vertical是donut-vertical的同义值，未知值使用normal。
+      schema:
+        type: string
+        default: normal
+        enum:
+        - normal
+        - compact
+        - donut
+        - donut-vertical
+        - donut_vertical
+        - pie
+    LanguagesCount:
+      name: langs_count
+      in: query
+      required: false
+      description: 语言数截断到1..20。未提供时normal/donut默认5，其他布局默认6；hide_progress=true时也默认6。不显示的语言不合并为Others。
+      schema:
+        type: integer
+      example: 6
+    LanguagesHide:
+      name: hide
+      in: query
+      required: false
+      description: 隐藏语言名称的CSV，忽略大小写，默认空。
+      schema:
+        type: array
+        items:
+          type: string
+      example:
+      - HTML
+      - CSS
+      style: form
+      explode: false
+    HideProgress:
+      name: hide_progress
+      in: query
+      required: false
+      description: 隐藏进度条；normal采用紧凑图例形式。仅true开启，大小写不敏感。
+      schema:
+        type: boolean
+        default: false
+    SizeWeight:
+      name: size_weight
+      in: query
+      required: false
+      description: 语言字节量的指数，无法解析时使用1.0；权重为bytes^size_weight * repo_count^count_weight。
+      schema:
+        type: number
+        default: 1.0
+    CountWeight:
+      name: count_weight
+      in: query
+      required: false
+      description: 语言出现仓库数的指数，无法解析时使用0.0。
+      schema:
+        type: number
+        default: 0.0
+    StatsFormat:
+      name: stats_format
+      in: query
+      required: false
+      description: 语言数值格式；bytes以B/KB/MB/GB显示加权值，仅默认权重时等于实际聚合字节量。忽略大小写，未知值使用percentages。
+      schema:
+        type: string
+        default: percentages
+        enum:
+        - percentages
+        - bytes
+    ShowOwner:
+      name: show_owner
+      in: query
+      required: false
+      description: 标题显示owner/repo；仅true开启，大小写不敏感。
+      schema:
+        type: boolean
+        default: false
+    DescriptionLines:
+      name: description_lines_count
+      in: query
+      required: false
+      description: 描述最大行数，截断到1..3；无法解析时使用3。
+      schema:
+        type: integer
+        default: 3
+  responses:
+    GithubFailure:
+      description: GitHub查询或渲染失败，包括非法日期、用户/仓库不存在、上游权限/限流错误。文本为异常消息，措辞不保证稳定。部分可选参数会默认化或截断，并非所有无效参数都返回400。
+      content:
+        text/plain:
+          schema:
+            type: string
+    WakatimePublicDataUnavailable:
+      description: 没有可展示的公开数据，调用方应提示用户开启WakaTime公开数据。
+      content:
+        text/plain:
+          schema:
+            type: string
+            const: wakatime_public_data_unavailable
+          example: wakatime_public_data_unavailable
+    WakatimeUserNotFound:
+      description: 找不到WakaTime用户。未知路由的Ktor 404不使用此业务错误码。
+      content:
+        text/plain:
+          schema:
+            type: string
+            const: wakatime_user_not_found
+          example: wakatime_user_not_found
+    UnhandledFailure:
+      description: 未捕获的异常，由Ktor处理，响应体不作为稳定业务契约；不要等同于用户未公开数据。
