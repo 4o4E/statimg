@@ -22,9 +22,9 @@ layout2d:
   text_size: 20
 
   # 背景圆角
-  bg_radii: 4.5
-  # 描边圆角
-  stroke_radii: 4.5
+  bg_radii: 12
+  # 保留兼容；外框使用 bg_radii
+  stroke_radii: 12
 
   # 外边距
   margin: 25

@@ -13,11 +13,29 @@
 
 ## 效果预览
 
-以下图片均由实际 HTTP 接口生成，不需要部署服务就能查看。各独立接口的示例见[接口文档](docs/http-api.md)。
+以下图片均由实际 HTTP 接口生成，不需要部署服务即可查看。点击接口名称查看参数和请求示例；点击图片可查看原图。
 
-| GitHub 综合统计 | WakaTime 综合统计 |
+| [GitHub 综合统计](docs/http-api.md#github-综合统计图) | [WakaTime 综合统计](docs/http-api.md#wakatime-综合统计图) |
 | --- | --- |
 | [![GitHub 综合统计](docs/examples/github-dashboard.png)](docs/examples/github-dashboard.png) | [![WakaTime 综合统计](docs/examples/wakatime-stats.png)](docs/examples/wakatime-stats.png) |
+
+### [GitHub 2D 贡献热力图](docs/http-api.md#github-2d-贡献热力图)
+
+[![GitHub 2D 贡献热力图](docs/examples/github-contribution.png)](docs/examples/github-contribution.png)
+
+### [GitHub 3D 贡献图](docs/http-api.md#github-3d-贡献图)
+
+[![GitHub 3D 贡献图](docs/examples/github-contribution3d.png)](docs/examples/github-contribution3d.png)
+
+| [GitHub 评级统计卡](docs/http-api.md#github-评级统计卡) | [GitHub 语言卡](docs/http-api.md#github-语言卡) |
+| --- | --- |
+| [![GitHub 评级统计卡](docs/examples/github-stats.png)](docs/examples/github-stats.png) | [![GitHub 语言卡](docs/examples/github-top-langs.png)](docs/examples/github-top-langs.png) |
+
+### [GitHub 仓库卡](docs/http-api.md#github-仓库卡)
+
+[![GitHub 仓库卡](docs/examples/github-repo.png)](docs/examples/github-repo.png)
+
+主题列表接口不返回图片：[GitHub 主题 JSON](docs/examples/github-themes.json) · [WakaTime 主题 JSON](docs/examples/wakatime-themes.json)。
 
 ## 运行前准备
 

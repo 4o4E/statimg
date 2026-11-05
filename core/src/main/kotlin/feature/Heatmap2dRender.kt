@@ -20,8 +20,8 @@ object Heatmap2dRender {
         @SerialName("lang_size") val langSize: Float = 20F,
         @SerialName("text_font") val textFontFile: String = "font/JetBrainsMono-Medium.ttf",
         @SerialName("text_size") val textSize: Float = 20F,
-        @SerialName("bg_radii") val bgRadii: Float = 4.5F,
-        @SerialName("stroke_radii") val strokeRadii: Float = 4.5F,
+        @SerialName("bg_radii") val bgRadii: Float = 12F,
+        @SerialName("stroke_radii") val strokeRadii: Float = 12F,
         val margin: Float = 25F,
         val spacing: Float = 30F,
         @SerialName("bar_padding") val barPadding: Float = 10F,
@@ -166,13 +166,14 @@ object Heatmap2dRender {
             textColor = theme.titleColor,
             fontFamily = layout.titleFontFamily
         )
+        val frame = Shape.RoundedRect(layout.bgRadii)
 
         return render {
             column(
                 Modifier
-                    .clip(Shape.RoundedRect(layout.bgRadii))
+                    .clip(frame)
                     .background(theme.bgColor)
-                    .border(.5f, theme.bolderColor)
+                    .border(2f, theme.bolderColor, shape = frame)
                     .padding(layout.margin)
             ) {
                 text(title, textModifier = titleTextStyle)

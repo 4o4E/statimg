@@ -112,7 +112,6 @@ object GithubCardRender {
     private const val DEFAULT_LANG_COLOR = "#858585"
 
     private data class CardMetrics(val layout: Heatmap2dRender.Layout) {
-        val hairline = max(0.5f, layout.textSize / 40f)
         val titleGap = layout.textSize
         val rowGap = layout.textSize * 0.25f
         val inlineGap = layout.barPadding
@@ -185,14 +184,15 @@ object GithubCardRender {
         )
         val cardWidth = contentWidth + layout.margin * 2
         val rankImage = if (options.hideRank) null else rankBadge(stats.rank, theme, layout, options.rankIcon, metrics.rankSize)
+        val frame = Shape.RoundedRect(layout.bgRadii)
 
         return render {
             column(
                 Modifier
                     .width(cardWidth)
-                    .clip(Shape.RoundedRect(layout.bgRadii))
+                    .clip(frame)
                     .background(theme.bgColor)
-                    .border(metrics.hairline, theme.bolderColor)
+                    .border(2f, theme.bolderColor, shape = frame)
                     .padding(layout.margin)
             ) {
                 text(title, modifier = Modifier.padding(bottom = metrics.titleGap), textModifier = titleTextStyle(layout, theme))
@@ -283,14 +283,15 @@ object GithubCardRender {
         val width = when (finalLayout) {
             else -> contentWidth
         }
+        val frame = Shape.RoundedRect(layoutConfig.bgRadii)
 
         return render {
             column(
                 Modifier
                     .width(width)
-                    .clip(Shape.RoundedRect(layoutConfig.bgRadii))
+                    .clip(frame)
                     .background(theme.bgColor)
-                    .border(metrics.hairline, theme.bolderColor)
+                    .border(2f, theme.bolderColor, shape = frame)
                     .padding(layoutConfig.margin)
             ) {
                 text(title, modifier = Modifier.padding(bottom = metrics.titleGap), textModifier = titleTextStyle(layoutConfig, theme))
@@ -492,14 +493,15 @@ object GithubCardRender {
         )
         val descWidth = descLines.maxOfOrNull { estimateBodyTextWidth(layout, it, layout.textSize) } ?: 0f
         val cardWidth = maxOf(titleRowWidth, descWidth, metaWidth) + layout.margin * 2
+        val frame = Shape.RoundedRect(layout.bgRadii)
 
         return render {
             column(
                 Modifier
                     .width(cardWidth)
-                    .clip(Shape.RoundedRect(layout.bgRadii))
+                    .clip(frame)
                     .background(theme.bgColor)
-                    .border(metrics.hairline, theme.bolderColor)
+                    .border(2f, theme.bolderColor, shape = frame)
                     .padding(layout.margin)
             ) {
                 row(verticalAlignment = VerticalAlignment.Center) {
