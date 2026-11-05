@@ -1,6 +1,6 @@
 # statimg
 
-将 GitHub、WakaTime 的开发者统计渲染为 PNG，适合 Bot、README 和不支持 SVG 的场景。数据在线获取，图片由服务端使用 Tavolo 绘制。
+将 GitHub、WakaTime 的开发者统计渲染为 PNG，适合 Bot、README 和不支持 SVG 的场景。数据在线获取，图片由服务端使用 [Tavolo](https://github.com/4o4E/Tavolo) 绘制。
 
 [![Release](https://img.shields.io/github/v/release/4o4E/statimg?label=Release)](https://github.com/4o4E/statimg/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/4o4E/statimg/total?label=Downloads)](https://github.com/4o4E/statimg/releases)
