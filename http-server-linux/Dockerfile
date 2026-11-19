@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jre-jammy AS jre_source
+FROM azul-zulu:17.70-17.0.21.1-jre-debian13 AS jre_source
 # ubuntu 作为基础镜像。
 FROM ubuntu:24.04
 
@@ -21,7 +21,7 @@ ENV LANG="en_US.UTF-8" \
     LANGUAGE="en_US.UTF-8" \
     LC_ALL="C" \
     PATH="$JAVA_HOME/bin:$PATH"
-COPY --from=jre_source "$JAVA_HOME" "$JAVA_HOME"
+COPY --from=jre_source /usr/lib/jvm/zulu17/ "$JAVA_HOME"
 
 COPY enterpoint.sh /enterpoint.sh
 RUN chmod +x /enterpoint.sh && \

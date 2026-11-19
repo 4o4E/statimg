@@ -123,7 +123,7 @@ curl -fS --max-time 300 'http://localhost:2345/wakatime/stats/404E?theme=tokyoni
 
 ## 方式二：使用 Docker Compose
 
-镜像自带 Java、原生依赖和 JetBrains Mono 字体，无需在宿主机安装 Java。先安装 Docker Engine／Docker Desktop 及 Compose v2。
+镜像自带 Azul Zulu JRE 17.0.21.1（含 [CVE-2026-114938](https://www.cve.org/CVERecord?id=CVE-2026-114938) 修复）、原生依赖和 JetBrains Mono 字体，无需在宿主机安装 Java。先安装 Docker Engine／Docker Desktop 及 Compose v2。
 
 ### 1. 下载 Compose 与环境变量示例
 
